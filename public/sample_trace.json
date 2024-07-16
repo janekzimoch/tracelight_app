@@ -1,4 +1,4 @@
-[
+[[
     {
       "role": "system",
       "content": "Memory (you may reference this infomration when solving problems):\n{user_email: 'user123@gmail.com'}"
@@ -70,4 +70,77 @@
       "role": "assistant",
       "content": "I successfully sent the email to John Doe and retrieved the latest 5 emails. Here are the details:\n\n1. **Email 1**\n   - Sender: user123@gmail.com\n   - Subject: Meeting\n   - Body: Let's meet tomorrow at 10 AM.\n   - Timestamp: 2024-07-02T18:10:34.095Z\n\n2. **Email 2**\n   - Sender: user123@gmail.com\n   - Subject: Meeting\n   - Body: Let's meet tomorrow at 10 AM.\n   - Timestamp: 2024-06-24T15:22:03.716Z\n\n3. **Email 3**\n   - Sender: user123@gmail.com\n   - Subject: Meeting\n   - Body: Let's meet tomorrow at 10 AM.\n   - Timestamp: 2024-06-24T15:14:58.262Z\n\n4. **Email 4**\n   - Sender: user123@gmail.com\n   - Subject: Meeting\n   - Body: Let's meet tomorrow at 10 AM.\n   - Timestamp: 2024-06-24T15:11:32.955Z\n\n5. **Email 5**\n   - Sender: user123@gmail.com\n   - Subject: Meeting\n   - Body: Let's meet tomorrow at 10 AM.\n   - Timestamp: 2024-06-24T14:48:43.425Z"
     }
-  ]
+  ], 
+  [
+    {
+      "role": "system",
+      "content": "Memory (you may reference this infomration when solving problems):\n{user_email: 'user123@gmail.com'}"
+    },
+    {
+      "role": "system",
+      "content": "You are a helpful assistant. You complete all actions requested before replying back to the user, unless the request is ambigious and you really need to get some clarification. Use available tools to complete your tasks. After completing all tasks you wanted with tools, respond to the user summarising what you did - keep it brief!"
+    },
+    {
+      "role": "user",
+      "content": "Send an email to John Doe with subject 'Meeting' and body 'Let's meet tomorrow at 10 AM.' and then fetch the latest 5 emails from John Doe"
+    },
+    {
+      "role": "assistant",
+      "content": "plan of action to be executed: [\n  {\n    \"name\": \"functions.lookup_email_by_name\",\n    \"args\": {\n      \"name\": \"John Doe\"\n    }\n  },\n  {\n    \"name\": \"functions.send_email\",\n    \"args\": {\n      \"sender\": \"user123@gmail.com\",\n      \"recipient\": \"<email_address_obtained_from_step_1>\",\n      \"subject\": \"Meeting\",\n      \"body\": \"Let's meet tomorrow at 10 AM\"\n    }\n  },\n  {\n    \"name\": \"functions.get_emails\",\n    \"args\": {\n      \"address\": \"<email_address_obtained_from_step_1>\",\n      \"k\": 5\n    }\n  }\n]"
+    },
+    {
+      "role": "assistant",
+      "content": null,
+      "tool_calls": [
+        {
+          "id": "call_WKsBXpDcQu11yjvqhtsodFPk",
+          "type": "function",
+          "function": {
+            "name": "lookup_email_by_name",
+            "arguments": "{\"name\":\"John Doe\"}"
+          }
+        }
+      ]
+    },
+    {
+      "tool_call_id": "call_WKsBXpDcQu11yjvqhtsodFPk",
+      "role": "tool",
+      "content": "lookup_email_by_name: {\"email\":\"john@example.com\"}"
+    },
+    {
+      "role": "assistant",
+      "content": null,
+      "tool_calls": [
+        {
+          "id": "call_QqG30xrUfGShtp0u2NUSBfeA",
+          "type": "function",
+          "function": {
+            "name": "send_email",
+            "arguments": "{\"sender\": \"user123@gmail.com\", \"recipient\": \"john@example.com\", \"subject\": \"Meeting\", \"body\": \"Let's meet tomorrow at 10 AM.\"}"
+          }
+        },
+        {
+          "id": "call_srhlGpJuTOG8BnDQBCUa6ouT",
+          "type": "function",
+          "function": {
+            "name": "get_emails",
+            "arguments": "{\"address\": \"john@example.com\", \"k\": 5}"
+          }
+        }
+      ]
+    },
+    {
+      "tool_call_id": "call_QqG30xrUfGShtp0u2NUSBfeA",
+      "role": "tool",
+      "content": "send_email: {\"message\":\"Email sent successfully.\"}"
+    },
+    {
+      "tool_call_id": "call_srhlGpJuTOG8BnDQBCUa6ouT",
+      "role": "tool",
+      "content": "get_emails: {\"emails\":[{\"id\":35,\"sender\":\"user123@gmail.com\",\"recipient\":\"john@example.com\",\"subject\":\"Meeting\",\"body\":\"Let's meet tomorrow at 10 AM.\",\"timestamp\":\"2024-07-02T18:10:34.095Z\"},{\"id\":34,\"sender\":\"user123@gmail.com\",\"recipient\":\"john@example.com\",\"subject\":\"Meeting\",\"body\":\"Let's meet tomorrow at 10 AM.\",\"timestamp\":\"2024-06-24T15:22:03.716Z\"},{\"id\":33,\"sender\":\"user123@gmail.com\",\"recipient\":\"john@example.com\",\"subject\":\"Meeting\",\"body\":\"Let's meet tomorrow at 10 AM.\",\"timestamp\":\"2024-06-24T15:14:58.262Z\"},{\"id\":32,\"sender\":\"user123@gmail.com\",\"recipient\":\"john@example.com\",\"subject\":\"Meeting\",\"body\":\"Let's meet tomorrow at 10 AM.\",\"timestamp\":\"2024-06-24T15:11:32.955Z\"},{\"id\":31,\"sender\":\"user123@gmail.com\",\"recipient\":\"john@example.com\",\"subject\":\"Meeting\",\"body\":\"Let's meet tomorrow at 10 AM.\",\"timestamp\":\"2024-06-24T14:48:43.425Z\"}]}"
+    },
+    {
+      "role": "assistant",
+      "content": "I successfully sent the email to John Doe and retrieved the latest 5 emails. Here are the details:\n\n1. **Email 1**\n   - Sender: user123@gmail.com\n   - Subject: Meeting\n   - Body: Let's meet tomorrow at 10 AM.\n   - Timestamp: 2024-07-02T18:10:34.095Z\n\n2. **Email 2**\n   - Sender: user123@gmail.com\n   - Subject: Meeting\n   - Body: Let's meet tomorrow at 10 AM.\n   - Timestamp: 2024-06-24T15:22:03.716Z\n\n3. **Email 3**\n   - Sender: user123@gmail.com\n   - Subject: Meeting\n   - Body: Let's meet tomorrow at 10 AM.\n   - Timestamp: 2024-06-24T15:14:58.262Z\n\n4. **Email 4**\n   - Sender: user123@gmail.com\n   - Subject: Meeting\n   - Body: Let's meet tomorrow at 10 AM.\n   - Timestamp: 2024-06-24T15:11:32.955Z\n\n5. **Email 5**\n   - Sender: user123@gmail.com\n   - Subject: Meeting\n   - Body: Let's meet tomorrow at 10 AM.\n   - Timestamp: 2024-06-24T14:48:43.425Z"
+    }
+  ]]

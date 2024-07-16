@@ -26,9 +26,22 @@ export async function POST(request: NextRequest) {
     }
 
     const fileData = await file.text();
+    const jsonData = JSON.parse(fileData);
 
-    // Insert the file data into the database
-    await db.run("INSERT INTO traces (data) VALUES (?)", fileData);
+    // Check if jsonData is a list of lists
+    if (!Array.isArray(jsonData) || !jsonData.every(Array.isArray)) {
+      return NextResponse.json({ message: "Invalid JSON format" }, { status: 400 });
+    }
+
+    // Insert each list from the JSON as a new row
+    const insertStatement = await db.prepare("INSERT INTO traces (data) VALUES (?)");
+    for (const list of jsonData) {
+      const listString = JSON.stringify(list);
+      await insertStatement.run(listString);
+    }
+
+    // Finalize the statement
+    await insertStatement.finalize();
 
     // Close the database connection
     await db.close();
