@@ -1,37 +1,55 @@
-import React from "react";
+"use client";
+
+import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import TestSampleCard from "./components/TestSampleCard";
 
-export interface TestSample {
-  id: number;
-  userIntent: string;
-  subIntents: string[];
-  trace: string[];
-  results: string;
-  explanation: string;
+export interface SpanType {
+  id: string;
+  sequence_index: number;
+  role: string;
+  content: string;
+  tool_calls: string | null;
 }
 
-const testSamples: TestSample[] = [
-  {
-    id: 1,
-    userIntent: "Send an email to John Doe with subject 'Meeting' and...",
-    subIntents: ["Send email", "Fetch emails"],
-    trace: ["1", "2", "3", "4"],
-    results: "",
-    explanation: "",
-  },
-  {
-    id: 2,
-    userIntent: "Schedule a meeting with the team at 3 PM...",
-    subIntents: ["Schedule meeting", "Check calendar"],
-    trace: ["1", "2", "3"],
-    results: "",
-    explanation: "",
-  },
-  // Add more sample data here...
-];
+export interface Trace {
+  trace_id: string;
+  spans: SpanType[];
+}
 
 export default function TestSamples() {
+  const [traces, setTraces] = useState<Trace[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchTraces() {
+      try {
+        const response = await fetch("/dashboard/api/traces");
+        if (response.ok) {
+          const data = await response.json();
+          const samples = Object.entries(data).map(([trace_id, spans]) => ({
+            trace_id,
+            spans: spans as SpanType[],
+          }));
+          console.log("samples:", samples);
+          setTraces(samples);
+        } else {
+          console.error("Failed to fetch traces");
+        }
+      } catch (error) {
+        console.error("Error fetching traces:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchTraces();
+  }, []);
+
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
+
   return (
     <div className="flex items-start h-screen mt-24">
       <div className="container mx-auto p-6 space-y-6">
@@ -39,12 +57,12 @@ export default function TestSamples() {
           <div className="flex items-center px-4">
             <div className="mr-8 w-8"></div>
             <div className="flex-1 relative mb-4">
-              <div className="grid grid-cols-5 gap-4 text-center">
-                <h3 className="text-sm font-medium text-slate-500">User Intent</h3>
-                <h3 className="text-sm font-medium text-slate-500">Traces</h3>
-                <h3 className="text-sm font-medium text-slate-500">Milestones</h3>
-                <h3 className="text-sm font-medium text-slate-500">Tests</h3>
-                <h3 className="text-sm font-medium text-slate-500">Results</h3>
+              <div className="grid grid-cols-5 gap-4 text-center text-md text-muted-foreground">
+                <h3>User Intent</h3>
+                <h3>Traces</h3>
+                <h3>Milestones</h3>
+                <h3>Tests</h3>
+                <h3>Results</h3>
               </div>
               <div className="absolute inset-y-0 left-0 right-0 grid grid-cols-5 pointer-events-none">
                 <div className="col-span-1 border-r border-slate-200"></div>
@@ -55,8 +73,8 @@ export default function TestSamples() {
             </div>
             <div className="w-10"></div>
           </div>
-          {testSamples.map((sample, index) => (
-            <TestSampleCard sample={sample} index={index} />
+          {traces.map((trace, index) => (
+            <TestSampleCard key={trace.trace_id} trace={trace} index={index} />
           ))}
         </div>
         <div className="flex justify-center mt-6">

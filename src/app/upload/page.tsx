@@ -1,4 +1,4 @@
-import UploadTraces from "@/components/UploadTraces";
+import UploadTraces from "./components/UploadTraces";
 
 export default function Upload() {
   return (

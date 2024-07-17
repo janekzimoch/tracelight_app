@@ -5,7 +5,7 @@ import { Database } from "sqlite";
 
 async function openDB(): Promise<Database> {
   return open({
-    filename: "./traces.db",
+    filename: "./data.db",
     driver: sqlite3.Database,
   });
 }

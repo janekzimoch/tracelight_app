@@ -1,14 +1,7 @@
-import { TestSample } from "../page";
+import { Trace } from "../page";
 import SpanRow from "./SpanRow";
 
-export const items = [
-  { title: "Placeholder Title 1", description: "Description for placeholder 1", tests: [] },
-  { title: "Placeholder Title 2", description: "Description for placeholder 2", tests: ["1", "2", "3"] },
-  { title: "Placeholder Title 3", description: "Description for placeholder 3", tests: [] },
-  { title: "Placeholder Title 4", description: "Description for placeholder 4", tests: [] },
-];
-
-export default function TestSampleDetails({ sample }: { sample: TestSample }) {
+export default function TestSampleDetails({ trace }: { trace: Trace }) {
   return (
     <div className="relative flex flex-col w-full px-10 py-4">
       {/* Vertical lines */}
@@ -24,8 +17,8 @@ export default function TestSampleDetails({ sample }: { sample: TestSample }) {
       </div>
 
       <div className="h-full space-y-4">
-        {items.map((item, index) => (
-          <SpanRow item={item} key={index} index={index} />
+        {trace.spans.map((span, index) => (
+          <SpanRow span={span} key={index} />
         ))}
       </div>
     </div>

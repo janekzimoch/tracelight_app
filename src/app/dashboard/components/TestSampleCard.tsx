@@ -3,17 +3,17 @@
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
 import React, { useState } from "react";
-import { TestSample } from "../page";
+import { Trace } from "../page";
 import { TrashIcon, ChevronDownIcon, ChevronUpIcon } from "@radix-ui/react-icons";
 import { Button } from "@/components/ui/button";
 import TestSampleDetails from "./TestSampleDetails";
 
-export default function TestSampleCard({ sample, index }: { sample: TestSample; index: number }) {
+export default function TestSampleCard({ trace, index }: { trace: Trace; index: number }) {
   const [expanded, setExpanded] = useState(false);
 
   return (
     <Card
-      key={sample.id}
+      key={trace.trace_id}
       className={`relative rounded-lg p-4 space-y-2 transition-all duration-300 ${
         expanded ? "max-h-[600px]" : "max-h-[200px]"
       } overflow-hidden group`} // Add group class for hover effect
@@ -24,23 +24,23 @@ export default function TestSampleCard({ sample, index }: { sample: TestSample; 
         </Avatar>
         <div className="flex-1 grid grid-cols-5 gap-6">
           <div>
-            <p className="text-sm text-slate-900">{sample.userIntent}</p>
+            <p className="text-sm text-slate-900">placeholder user intent</p>
           </div>
           <div>
             <ul className="list-disc list-inside text-sm text-slate-900">
-              {sample.subIntents.map((intent, index) => (
+              {[1, 2, 3].map((intent, index) => (
                 <li key={index}>{intent}</li>
               ))}
             </ul>
           </div>
           <div>
-            <p className="text-sm text-slate-900 whitespace-pre-line">{sample.trace}</p>
+            <p className="text-sm text-slate-900 whitespace-pre-line">Trace placeholder</p>
           </div>
           <div>
-            <p className="text-sm text-slate-900">{sample.results || ""}</p>
+            <p className="text-sm text-slate-900">...</p>
           </div>
           <div>
-            <p className="text-sm text-slate-900">{sample.explanation || ""}</p>
+            <p className="text-sm text-slate-900">...</p>
           </div>
         </div>
         <Button variant="ghost" size="icon" className="text-red-500">
@@ -62,8 +62,13 @@ export default function TestSampleCard({ sample, index }: { sample: TestSample; 
           <div className="border-t w-[90%] mx-auto my-4"></div>
 
           <div className="bg-slate-50 shadow-sm rounded-md py-4">
+            <div className="grid px-10 grid-cols-4 gap-6 ml-12 text-center pb-2 text-md text-muted-foreground">
+              <div className="col-span-2">Spans</div>
+              <div>Milestones</div>
+              <div>Tests</div>
+            </div>
             <div className="overflow-y-auto h-[400px] no-scrollbar ">
-              <TestSampleDetails sample={sample} />
+              <TestSampleDetails trace={trace} />
             </div>
           </div>
         </div>

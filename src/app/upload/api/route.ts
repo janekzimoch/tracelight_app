@@ -2,10 +2,11 @@ import sqlite3 from "sqlite3";
 import { open } from "sqlite";
 import { Database } from "sqlite";
 import { NextRequest, NextResponse } from "next/server";
+import { v4 as uuidv4 } from "uuid";
 
 async function openDB(): Promise<Database> {
   return open({
-    filename: "./traces.db",
+    filename: "./data.db",
     driver: sqlite3.Database,
   });
 }
@@ -14,8 +15,24 @@ export async function POST(request: NextRequest) {
   try {
     const db = await openDB();
 
-    // Create table if it doesn't exist
-    await db.exec("CREATE TABLE IF NOT EXISTS traces (id INTEGER PRIMARY KEY AUTOINCREMENT, data TEXT)");
+    // Create tables if they don't exist
+    await db.exec(`
+      CREATE TABLE IF NOT EXISTS traces (
+        id TEXT PRIMARY KEY
+      );
+    `);
+
+    await db.exec(`
+      CREATE TABLE IF NOT EXISTS spans (
+        id TEXT PRIMARY KEY,
+        trace_id TEXT,
+        sequence_index INTEGER,
+        role TEXT,
+        content TEXT,
+        tool_calls TEXT,
+        FOREIGN KEY (trace_id) REFERENCES traces(id)
+      );
+    `);
 
     // Extract the file data from the request
     const formData = await request.formData();
@@ -33,15 +50,36 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: "Invalid JSON format" }, { status: 400 });
     }
 
-    // Insert each list from the JSON as a new row
-    const insertStatement = await db.prepare("INSERT INTO traces (data) VALUES (?)");
-    for (const list of jsonData) {
-      const listString = JSON.stringify(list);
-      await insertStatement.run(listString);
-    }
+    for (const trace of jsonData) {
+      const traceId = uuidv4();
 
-    // Finalize the statement
-    await insertStatement.finalize();
+      // Insert the trace
+      await db.run("INSERT INTO traces (id) VALUES (?)", traceId);
+
+      // Insert each span within the trace
+      for (let i = 0; i < trace.length; i++) {
+        const span = trace[i];
+        const spanId = uuidv4();
+        const sequenceIndex = i;
+        const role = span.role || "";
+        let content = span.content || "";
+        const toolCalls = span.tool_calls ? JSON.stringify(span.tool_calls) : null;
+
+        if (span.tool_call_id) {
+          content = JSON.stringify({ tool_call_id: span.tool_call_id, content: span.content });
+        }
+
+        await db.run(
+          "INSERT INTO spans (id, trace_id, sequence_index, role, content, tool_calls) VALUES (?, ?, ?, ?, ?, ?)",
+          spanId,
+          traceId,
+          sequenceIndex,
+          role,
+          content,
+          toolCalls
+        );
+      }
+    }
 
     // Close the database connection
     await db.close();
