@@ -7,8 +7,11 @@ import { Trace } from "../page";
 import { TrashIcon, ChevronDownIcon, ChevronUpIcon } from "@radix-ui/react-icons";
 import { Button } from "@/components/ui/button";
 import TestSampleDetails from "./TestSampleDetails";
+import ResultBar, { ResultStatus } from "./ResultBar";
 
-export default function TestSampleCard({ trace, index }: { trace: Trace; index: number }) {
+const result: ResultStatus = { numberPassed: 5, numberTotal: 5 };
+
+export default function TestSampleCard({ trace, result, index }: { trace: Trace; result: ResultStatus; index: number }) {
   const [expanded, setExpanded] = useState(false);
 
   return (
@@ -22,7 +25,7 @@ export default function TestSampleCard({ trace, index }: { trace: Trace; index: 
         <Avatar className="mr-8 text-slate-500">
           <AvatarFallback>{index + 1}</AvatarFallback>
         </Avatar>
-        <div className="flex-1 grid grid-cols-5 gap-6">
+        <div className="flex-1 grid grid-cols-4 gap-6">
           <div>
             <p className="text-sm text-slate-900 truncate">{trace.user_request}</p>
           </div>
@@ -37,11 +40,8 @@ export default function TestSampleCard({ trace, index }: { trace: Trace; index: 
               ))}
             </p>
           </div>
-          <div>
-            <p className="text-sm text-slate-900">...</p>
-          </div>
-          <div>
-            <p className="text-sm text-slate-900">...</p>
+          <div className="flex justify-center items-center">
+            <ResultBar result={result} />
           </div>
         </div>
         <Button variant="ghost" size="icon" className="text-red-500">
