@@ -18,6 +18,7 @@ export async function GET() {
     const traces = await db.all(`
       SELECT 
         t.id as trace_id,
+        t.user_request as user_request,
         s.id as id,
         s.sequence_index,
         s.role,
@@ -37,13 +38,23 @@ export async function GET() {
     // Group spans by trace_id
     const groupedTraces = traces.reduce((acc, span) => {
       if (!acc[span.trace_id]) {
-        acc[span.trace_id] = [];
+        acc[span.trace_id] = {
+          trace_id: span.trace_id,
+          user_request: span.user_request,
+          spans: [],
+        };
       }
-      acc[span.trace_id].push(span);
+      acc[span.trace_id].spans.push({
+        id: span.id,
+        sequence_index: span.sequence_index,
+        role: span.role,
+        content: span.content,
+        tool_calls: span.tool_calls,
+      });
       return acc;
     }, {});
 
-    return NextResponse.json(groupedTraces, { status: 200 });
+    return NextResponse.json(Object.values(groupedTraces), { status: 200 });
   } catch (error) {
     console.error("Error fetching traces:", error);
     return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });

@@ -14,6 +14,7 @@ export interface SpanType {
 
 export interface Trace {
   trace_id: string;
+  user_request: string;
   spans: SpanType[];
 }
 
@@ -26,13 +27,8 @@ export default function TestSamples() {
       try {
         const response = await fetch("/dashboard/api/traces");
         if (response.ok) {
-          const data = await response.json();
-          const samples = Object.entries(data).map(([trace_id, spans]) => ({
-            trace_id,
-            spans: spans as SpanType[],
-          }));
-          console.log("samples:", samples);
-          setTraces(samples);
+          const data: Trace[] = await response.json();
+          setTraces(data);
         } else {
           console.error("Failed to fetch traces");
         }

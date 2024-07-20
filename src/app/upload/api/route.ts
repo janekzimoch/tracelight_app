@@ -11,6 +11,15 @@ async function openDB(): Promise<Database> {
   });
 }
 
+type TestSample = {
+  user_request: string;
+  trace: any[];
+};
+
+function isTestSample(obj: any): obj is TestSample {
+  return typeof obj === "object" && typeof obj.user_request === "string" && Array.isArray(obj.trace);
+}
+
 export async function POST(request: NextRequest) {
   try {
     const db = await openDB();
@@ -18,7 +27,8 @@ export async function POST(request: NextRequest) {
     // Create tables if they don't exist
     await db.exec(`
       CREATE TABLE IF NOT EXISTS traces (
-        id TEXT PRIMARY KEY
+        id TEXT PRIMARY KEY,
+        user_request TEXT
       );
     `);
 
@@ -46,15 +56,17 @@ export async function POST(request: NextRequest) {
     const jsonData = JSON.parse(fileData);
 
     // Check if jsonData is a list of lists
-    if (!Array.isArray(jsonData) || !jsonData.every(Array.isArray)) {
+    if (!Array.isArray(jsonData) || !jsonData.every(isTestSample)) {
       return NextResponse.json({ message: "Invalid JSON format" }, { status: 400 });
     }
 
-    for (const trace of jsonData) {
+    for (const testSample of jsonData) {
       const traceId = uuidv4();
+      const user_request = testSample.user_request;
+      const trace = testSample.trace;
 
       // Insert the trace
-      await db.run("INSERT INTO traces (id) VALUES (?)", traceId);
+      await db.run("INSERT INTO traces (id, user_request) VALUES (?, ?)", traceId, user_request);
 
       // Insert each span within the trace
       for (let i = 0; i < trace.length; i++) {

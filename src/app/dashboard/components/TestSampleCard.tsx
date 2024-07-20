@@ -24,17 +24,18 @@ export default function TestSampleCard({ trace, index }: { trace: Trace; index: 
         </Avatar>
         <div className="flex-1 grid grid-cols-5 gap-6">
           <div>
-            <p className="text-sm text-slate-900">placeholder user intent</p>
+            <p className="text-sm text-slate-900 truncate">{trace.user_request}</p>
           </div>
           <div>
-            <ul className="list-disc list-inside text-sm text-slate-900">
+            <ul className="list-disc list-inside text-sm text-slate-900">Some Trace summary ....</ul>
+          </div>
+          <div>
+            <p className="text-sm text-slate-900 whitespace-pre-line">
+              {" "}
               {[1, 2, 3].map((intent, index) => (
                 <li key={index}>{intent}</li>
               ))}
-            </ul>
-          </div>
-          <div>
-            <p className="text-sm text-slate-900 whitespace-pre-line">Trace placeholder</p>
+            </p>
           </div>
           <div>
             <p className="text-sm text-slate-900">...</p>
