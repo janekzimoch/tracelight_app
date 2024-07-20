@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import TestSampleCard from "./components/TestSampleCard";
 import { ResultStatus } from "./components/ResultBar";
+import { Milestones } from "./components/MilestoneTextField";
 
 export interface SpanType {
   id: string;
@@ -22,6 +23,21 @@ export interface Trace {
 const resultMockData: ResultStatus[] = [
   { numberPassed: 5, numberTotal: 5 },
   { numberPassed: 4, numberTotal: 5 },
+];
+
+const milestonesMockData: Milestones[] = [
+  [
+    "Make sure emails are under 50 words long.",
+    "Planner should plan 4 steps: 1) find user email address, 2) find recipeint email address, 3) fetch relevant data, 4) send email.",
+    "email was sent succesfully if we get 200 response from gmail",
+    "make sure get_email_address gets called for both user and recipient",
+  ],
+  [
+    "Ensure email subjects are concise and informative.",
+    "The planner should execute the following steps: 1) authenticate user, 2) verify recipient details, 3) compose email content, 4) deliver email.",
+    "An email is considered sent successfully if a 200 status code is returned by the mail server.",
+    "Verify that get_user_email and get_recipient_email functions are executed for both sender and recipient.",
+  ],
 ];
 
 export default function TestSamples() {
@@ -74,7 +90,7 @@ export default function TestSamples() {
             <div className="w-10"></div>
           </div>
           {traces.map((trace, index) => (
-            <TestSampleCard key={trace.trace_id} trace={trace} index={index} result={resultMockData[index]} />
+            <TestSampleCard key={trace.trace_id} trace={trace} index={index} result={resultMockData[index]} milestones={milestonesMockData[index]} />
           ))}
         </div>
         <div className="flex justify-center mt-6">

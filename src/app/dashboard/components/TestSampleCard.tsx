@@ -8,10 +8,19 @@ import { TrashIcon, ChevronDownIcon, ChevronUpIcon } from "@radix-ui/react-icons
 import { Button } from "@/components/ui/button";
 import TestSampleDetails from "./TestSampleDetails";
 import ResultBar, { ResultStatus } from "./ResultBar";
+import MilestoneTextField, { Milestones } from "./MilestoneTextField";
 
-const result: ResultStatus = { numberPassed: 5, numberTotal: 5 };
-
-export default function TestSampleCard({ trace, result, index }: { trace: Trace; result: ResultStatus; index: number }) {
+export default function TestSampleCard({
+  trace,
+  result,
+  index,
+  milestones,
+}: {
+  trace: Trace;
+  result: ResultStatus;
+  index: number;
+  milestones: Milestones;
+}) {
   const [expanded, setExpanded] = useState(false);
 
   return (
@@ -33,12 +42,7 @@ export default function TestSampleCard({ trace, result, index }: { trace: Trace;
             <ul className="list-disc list-inside text-sm text-slate-900">Some Trace summary ....</ul>
           </div>
           <div>
-            <p className="text-sm text-slate-900 whitespace-pre-line">
-              {" "}
-              {[1, 2, 3].map((intent, index) => (
-                <li key={index}>{intent}</li>
-              ))}
-            </p>
+            <MilestoneTextField milestones={milestones} />
           </div>
           <div className="flex justify-center items-center">
             <ResultBar result={result} />
