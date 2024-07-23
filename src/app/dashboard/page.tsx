@@ -4,7 +4,8 @@ import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import TestSampleCard from "./components/TestSampleCard";
 import { ResultStatus } from "./components/ResultBar";
-import { Milestones } from "./components/MilestoneTextField";
+import { Milestones } from "./components/MilestoneCard";
+import { FeedbackProps } from "./components/TestSampleExplenations";
 
 export interface SpanType {
   id: string;
@@ -40,8 +41,26 @@ const milestonesMockData: Milestones[] = [
   ],
 ];
 
+const feedbackList: FeedbackProps[] = [
+  {
+    title: "Send Email",
+    message:
+      "The sub-request to send an email to John Doe was successfully completed. {ref0} The email lookup returned the correct email address, and the send email function confirmed that the email was sent successfully. {ref1}",
+    references: [
+      { spanId: "ca9bfb74-db72-4a9c-aa50-34d69acc0116", text: "I successfully" },
+      { spanId: "a52092e3-b5ff-4092-99af-032d3aeee445", text: "Send an email" },
+    ],
+  },
+  {
+    title: "Fetch Emails",
+    message: "The agent successfully retrieved the latest 5 emails sent from 'user123@gmail.com' to 'john@example.com'.",
+    references: [],
+  },
+];
+
 export default function TestSamples() {
   const [traces, setTraces] = useState<Trace[]>([]);
+  const [milestones, setMilestones] = useState<Milestones[]>(milestonesMockData);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -64,6 +83,22 @@ export default function TestSamples() {
     fetchTraces();
   }, []);
 
+  const updateMilestone = (index: number, subIndex: number, value: string) => {
+    setMilestones((prevMilestones) => {
+      const newMilestones = [...prevMilestones];
+      newMilestones[index][subIndex] = value;
+      return newMilestones;
+    });
+  };
+
+  const addMilestone = (index: number, value: string) => {
+    setMilestones((prevMilestones) => {
+      const newMilestones = [...prevMilestones];
+      newMilestones[index] = [...newMilestones[index], value];
+      return newMilestones;
+    });
+  };
+
   if (isLoading) {
     return <div>Loading...</div>;
   }
@@ -76,7 +111,7 @@ export default function TestSamples() {
             <div className="mr-8 w-8"></div>
             <div className="flex-1 relative mb-4">
               <div className="grid grid-cols-4 gap-4 text-center text-md text-muted-foreground">
-                <h3>User Intent</h3>
+                <h3>User Request</h3>
                 <h3>Traces</h3>
                 <h3>Milestones</h3>
                 <h3>Results</h3>
@@ -90,7 +125,16 @@ export default function TestSamples() {
             <div className="w-10"></div>
           </div>
           {traces.map((trace, index) => (
-            <TestSampleCard key={trace.trace_id} trace={trace} index={index} result={resultMockData[index]} milestones={milestonesMockData[index]} />
+            <TestSampleCard
+              key={trace.trace_id}
+              trace={trace}
+              index={index}
+              result={resultMockData[index]}
+              milestones={milestones[index]}
+              updateMilestone={(subIndex: number, value: string) => updateMilestone(index, subIndex, value)}
+              addMilestone={(value: string) => addMilestone(index, value)}
+              feedback={feedbackList}
+            />
           ))}
         </div>
         <div className="flex justify-center mt-6">
