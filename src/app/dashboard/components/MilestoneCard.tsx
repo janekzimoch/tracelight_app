@@ -1,5 +1,6 @@
 import React from "react";
 import { Milestone } from "../api/testSamples/route";
+import { PlusIcon } from "@radix-ui/react-icons";
 
 export default function MilestoneCard({ milestones, onClick }: { milestones: Milestone[]; onClick?: () => void }) {
   return (
@@ -13,6 +14,9 @@ export default function MilestoneCard({ milestones, onClick }: { milestones: Mil
             {index + 1}. {milestone.text}
           </div>
         ))}
+        <div className="py-0.5 justify-center flex rounded-lg hover:bg-slate-100">
+          <PlusIcon className="text-slate-500" />
+        </div>
       </div>
     </div>
   );
