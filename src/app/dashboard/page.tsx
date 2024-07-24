@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
 import TestSampleCard from "./components/TestSampleCard";
 import { ResultStatus } from "./components/ResultBar";
 import { FeedbackProps } from "./components/TestSampleExplenations";
@@ -34,6 +35,7 @@ const feedbackList: FeedbackProps[] = [
 export default function TestSamples() {
   const [testSamples, setTestSamples] = useState<TestSample[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRunningTests, setIsRunningTests] = useState(false);
 
   useEffect(() => {
     fetchTestSamples();
@@ -107,6 +109,29 @@ export default function TestSamples() {
     }
   }
 
+  async function runTests() {
+    setIsRunningTests(true);
+    try {
+      const response = await fetch("/dashboard/api/testResults", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ testSamples }),
+      });
+
+      if (response.ok) {
+        await fetchTestSamples();
+      } else {
+        console.error("Failed to run tests");
+      }
+    } catch (error) {
+      console.error("Error running tests:", error);
+    } finally {
+      setIsRunningTests(false);
+    }
+  }
+
   if (isLoading) {
     return <div>Loading...</div>;
   }
@@ -147,7 +172,16 @@ export default function TestSamples() {
         </div>
         <div className="flex justify-center mt-6">
           <div className="flex justify-center mt-4">
-            <Button variant="outline">Run Tests</Button>
+            <Button variant="outline" onClick={runTests} disabled={isRunningTests}>
+              {isRunningTests ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Running Tests
+                </>
+              ) : (
+                "Run Tests"
+              )}
+            </Button>
           </div>
         </div>
       </div>

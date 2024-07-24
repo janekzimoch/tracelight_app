@@ -27,6 +27,7 @@ export interface AgentSpan {
 
 export interface TestSample {
   test_sample_id: string;
+  trace_id: string;
   user_request: string;
   spans: AgentSpan[];
   milestones: Milestone[];
@@ -124,6 +125,7 @@ export async function GET() {
       if (!acc[row.test_sample_id]) {
         acc[row.test_sample_id] = {
           test_sample_id: row.test_sample_id,
+          trace_id: row.trace_id,
           user_request: row.user_request,
           spans: [],
           milestones: [],
