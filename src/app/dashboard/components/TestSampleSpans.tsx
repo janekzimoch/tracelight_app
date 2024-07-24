@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useCallback } from "react";
-import { AgentSpan } from "../page";
 import { Avatar } from "@/components/ui/avatar";
 import Span from "./Span";
+import { AgentSpan } from "../api/testSamples/route";
 
 export default function TestSampleSpans({
   spans,

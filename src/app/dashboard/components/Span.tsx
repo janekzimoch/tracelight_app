@@ -1,5 +1,5 @@
 import React from "react";
-import { AgentSpan } from "../page";
+import { AgentSpan } from "../api/testSamples/route";
 
 export default function Span({ span, isHighlighted, highlightedText }: { span: AgentSpan; isHighlighted: boolean; highlightedText: string | null }) {
   const highlightContent = (content: string, textToHighlight: string) => {

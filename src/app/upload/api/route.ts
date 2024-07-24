@@ -139,11 +139,38 @@ export async function POST(request: NextRequest) {
       CREATE TABLE IF NOT EXISTS MessageSpan (
         id TEXT PRIMARY KEY,
         sequence_index INTEGER,
-        span_id TEXT,
+        agent_span_id TEXT,
         content TEXT,
         type TEXT,
         tool_execution TEXT,
-        FOREIGN KEY (span_id) REFERENCES AgentSpan(id)
+        FOREIGN KEY (agent_span_id) REFERENCES AgentSpan(id)
+      );
+
+      CREATE TABLE IF NOT EXISTS Milestone (
+        id TEXT PRIMARY KEY,
+        test_sample_id TEXT,
+        sequence_index INTEGER,
+        text TEXT,
+        FOREIGN KEY (test_sample_id) REFERENCES TestSample(id)
+      );
+
+      CREATE TABLE IF NOT EXISTS TestResult (
+        id TEXT PRIMARY KEY,
+        milestone_id TEXT,
+        trace_id TEXT,
+        test_title TEXT,
+        feedback_message TEXT,
+        FOREIGN KEY (milestone_id) REFERENCES Milestone(id),
+        FOREIGN KEY (trace_id) REFERENCES Trace(id)
+      );
+
+      CREATE TABLE IF NOT EXISTS SpanReference (
+        id TEXT PRIMARY KEY,
+        test_result_id TEXT,
+        agent_span_id TEXT,
+        reference_text TEXT,
+        FOREIGN KEY (test_result_id) REFERENCES TestResult(id),
+        FOREIGN KEY (agent_span_id) REFERENCES AgentSpan(id)
       );
     `);
 
@@ -203,7 +230,7 @@ export async function POST(request: NextRequest) {
           const toolExecution = message.tool_execution ? JSON.stringify(message.tool_execution) : null;
 
           await db.run(
-            "INSERT INTO MessageSpan (id, sequence_index, span_id, content, type, tool_execution) VALUES (?, ?, ?, ?, ?, ?)",
+            "INSERT INTO MessageSpan (id, sequence_index, agent_span_id, content, type, tool_execution) VALUES (?, ?, ?, ?, ?, ?)",
             messageSpanId,
             messageIndex,
             agentSpanId,

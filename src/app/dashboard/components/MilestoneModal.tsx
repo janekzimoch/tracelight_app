@@ -2,17 +2,20 @@ import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle } from 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import MilestoneCard from "./MilestoneCard";
-import MilestoneElement, { MilestoneProps } from "./MilestoneElement";
+import MilestoneElement from "./MilestoneElement";
 import { useState } from "react";
+import { Milestone } from "../api/testSamples/route";
 
 export default function MilestoneModal({
   milestones,
   updateMilestone,
   addMilestone,
+  deleteMilestone,
 }: {
-  milestones: string[];
-  updateMilestone: (subIndex: number, value: string) => void;
+  milestones: Milestone[];
+  updateMilestone: (milestoneId: string, value: string) => Promise<void>;
   addMilestone: (value: string) => void;
+  deleteMilestone: (milestoneId: string) => void;
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [newMilestone, setNewMilestone] = useState("");
@@ -35,7 +38,12 @@ export default function MilestoneModal({
         </DialogHeader>
         <div className="space-y-1">
           {milestones.map((milestone, index) => (
-            <MilestoneElement milestone={milestone} setMilestone={(value: string) => updateMilestone(index, value)} />
+            <MilestoneElement
+              key={index}
+              milestone={milestone.text}
+              updateMilestone={(text: string) => updateMilestone(milestone.id, text)}
+              deleteMilestone={() => deleteMilestone(milestone.id)}
+            />
           ))}
         </div>
         <div className="flex items-center mt-4">

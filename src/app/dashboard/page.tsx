@@ -4,29 +4,8 @@ import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import TestSampleCard from "./components/TestSampleCard";
 import { ResultStatus } from "./components/ResultBar";
-import { Milestones } from "./components/MilestoneCard";
 import { FeedbackProps } from "./components/TestSampleExplenations";
-
-export interface MessageSpan {
-  id: string;
-  sequence_index: number;
-  content: string;
-  type: string;
-  tool_execution: object | null;
-}
-
-export interface AgentSpan {
-  id: string;
-  name: string;
-  sequence_index: number;
-  messages: MessageSpan[];
-}
-
-export interface TestSample {
-  test_sample_id: string;
-  user_request: string;
-  spans: AgentSpan[];
-}
+import { TestSample } from "./api/testSamples/route";
 
 const resultMockData: ResultStatus[] = [
   { numberPassed: 5, numberTotal: 5 },
@@ -35,41 +14,14 @@ const resultMockData: ResultStatus[] = [
   { numberPassed: 4, numberTotal: 5 },
 ];
 
-const milestonesMockData: Milestones[] = [
-  [
-    "Make sure emails are under 50 words long.",
-    "Planner should plan 4 steps: 1) find user email address, 2) find recipeint email address, 3) fetch relevant data, 4) send email.",
-    "email was sent succesfully if we get 200 response from gmail",
-    "make sure get_email_address gets called for both user and recipient",
-  ],
-  [
-    "Ensure email subjects are concise and informative.",
-    "The planner should execute the following steps: 1) authenticate user, 2) verify recipient details, 3) compose email content, 4) deliver email.",
-    "An email is considered sent successfully if a 200 status code is returned by the mail server.",
-    "Verify that get_user_email and get_recipient_email functions are executed for both sender and recipient.",
-  ],
-  [
-    "Make sure emails are under 50 words long.",
-    "Planner should plan 4 steps: 1) find user email address, 2) find recipeint email address, 3) fetch relevant data, 4) send email.",
-    "email was sent succesfully if we get 200 response from gmail",
-    "make sure get_email_address gets called for both user and recipient",
-  ],
-  [
-    "Ensure email subjects are concise and informative.",
-    "The planner should execute the following steps: 1) authenticate user, 2) verify recipient details, 3) compose email content, 4) deliver email.",
-    "An email is considered sent successfully if a 200 status code is returned by the mail server.",
-    "Verify that get_user_email and get_recipient_email functions are executed for both sender and recipient.",
-  ],
-];
-
 const feedbackList: FeedbackProps[] = [
   {
     title: "Send Email",
     message:
       "The sub-request to send an email to John Doe was successfully completed. {ref0} The email lookup returned the correct email address, and the send email function confirmed that the email was sent successfully. {ref1}",
     references: [
-      { spanId: "ca9bfb74-db72-4a9c-aa50-34d69acc0116", text: "I successfully" },
-      { spanId: "a52092e3-b5ff-4092-99af-032d3aeee445", text: "Send an email" },
+      { spanId: "a638e237-b7a4-483c-badd-afe55685ead8", text: "Error occurred" },
+      { spanId: "d3d79c63-ed6c-431f-865c-addfe6981f7a", text: "3. Use the Internet Research Agent with the query: " },
     ],
   },
   {
@@ -81,44 +33,79 @@ const feedbackList: FeedbackProps[] = [
 
 export default function TestSamples() {
   const [testSamples, setTestSamples] = useState<TestSample[]>([]);
-  const [milestones, setMilestones] = useState<Milestones[]>(milestonesMockData);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchTraces() {
-      try {
-        const response = await fetch("/dashboard/api/testSamples");
-        if (response.ok) {
-          const data: TestSample[] = await response.json();
-          setTestSamples(data);
-        } else {
-          console.error("Failed to fetch testSamples");
-        }
-      } catch (error) {
-        console.error("Error fetching testSamples:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    fetchTraces();
+    fetchTestSamples();
   }, []);
 
-  const updateMilestone = (index: number, subIndex: number, value: string) => {
-    setMilestones((prevMilestones) => {
-      const newMilestones = [...prevMilestones];
-      newMilestones[index][subIndex] = value;
-      return newMilestones;
-    });
-  };
+  async function fetchTestSamples() {
+    setIsLoading(true);
+    try {
+      const response = await fetch("/dashboard/api/testSamples");
+      if (response.ok) {
+        const data: TestSample[] = await response.json();
+        setTestSamples(data);
+      } else {
+        console.error("Failed to fetch testSamples");
+      }
+    } catch (error) {
+      console.error("Error fetching testSamples:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  }
 
-  const addMilestone = (index: number, value: string) => {
-    setMilestones((prevMilestones) => {
-      const newMilestones = [...prevMilestones];
-      newMilestones[index] = [...newMilestones[index], value];
-      return newMilestones;
-    });
-  };
+  async function updateMilestone(milestoneId: string, newText: string) {
+    try {
+      const response = await fetch(`/dashboard/api/milestones/${milestoneId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: newText }),
+      });
+
+      if (response.ok) {
+        await fetchTestSamples();
+      } else {
+        console.error("Failed to update milestone");
+      }
+    } catch (error) {
+      console.error("Error updating milestone:", error);
+    }
+  }
+
+  async function addMilestone(testSampleId: string, text: string) {
+    try {
+      const response = await fetch(`/dashboard/api/testSamples/${testSampleId}/milestones`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text }),
+      });
+      if (response.ok) {
+        await fetchTestSamples(); // Refetch all test samples to update state
+      } else {
+        console.error("Failed to add milestone");
+      }
+    } catch (error) {
+      console.error("Error adding milestone:", error);
+    }
+  }
+
+  async function deleteMilestone(milestoneId: string) {
+    try {
+      const response = await fetch(`/dashboard/api/milestones/${milestoneId}`, {
+        method: "DELETE",
+      });
+
+      if (response.ok) {
+        await fetchTestSamples(); // Refetch all test samples to update state
+      } else {
+        console.error("Failed to delete milestone");
+      }
+    } catch (error) {
+      console.error("Error deleting milestone:", error);
+    }
+  }
 
   if (isLoading) {
     return <div>Loading...</div>;
@@ -148,12 +135,12 @@ export default function TestSamples() {
           {testSamples.map((testSample, index) => (
             <TestSampleCard
               key={testSample.test_sample_id}
-              testSample={testSample}
               index={index}
+              testSample={testSample}
+              updateMilestone={updateMilestone}
+              addMilestone={(text: string) => addMilestone(testSample.test_sample_id, text)}
+              deleteMilestone={deleteMilestone}
               result={resultMockData[index]}
-              milestones={milestones[index]}
-              updateMilestone={(subIndex: number, value: string) => updateMilestone(index, subIndex, value)}
-              addMilestone={(value: string) => addMilestone(index, value)}
               feedback={feedbackList}
             />
           ))}

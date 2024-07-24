@@ -3,30 +3,29 @@
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
 import React, { useState } from "react";
-import { TestSample } from "../page";
 import { TrashIcon, ChevronDownIcon, ChevronUpIcon } from "@radix-ui/react-icons";
 import { Button } from "@/components/ui/button";
 import ResultBar, { ResultStatus } from "./ResultBar";
-import { Milestones } from "./MilestoneCard";
 import MilestoneModal from "./MilestoneModal";
 import TestSampleSpans from "./TestSampleSpans";
 import TestSampleExplenations, { FeedbackProps } from "./TestSampleExplenations";
+import { TestSample } from "../api/testSamples/route";
 
 export default function TestSampleCard({
   testSample,
   result,
   index,
-  milestones,
   updateMilestone,
   addMilestone,
+  deleteMilestone,
   feedback,
 }: {
   testSample: TestSample;
   result: ResultStatus;
   index: number;
-  milestones: Milestones;
-  updateMilestone: (subIndex: number, value: string) => void;
-  addMilestone: (value: string) => void;
+  updateMilestone: (milestoneId: string, newText: string) => Promise<void>;
+  addMilestone: (text: string) => void;
+  deleteMilestone: (milestoneId: string) => Promise<void>;
   feedback: FeedbackProps[];
 }) {
   const [expanded, setExpanded] = useState(false);
@@ -50,16 +49,32 @@ export default function TestSampleCard({
           <AvatarFallback>{index + 1}</AvatarFallback>
         </Avatar>
         <div className="flex-1 grid grid-cols-4 gap-6 ">
-          <div className="border max-h-[160px] rounded-md shadow hover:shadow-md flex flex-col overflow-hidden">
-            <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
-              <p className="text-sm text-slate-900 p-2">{testSample.user_request}</p>
+          <div>
+            <div className="border max-h-[160px] rounded-md shadow  flex flex-col overflow-hidden">
+              <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
+                <p className="text-sm text-slate-900 p-2">{testSample.user_request}</p>
+              </div>
             </div>
           </div>
           <div>
-            <ul className="list-disc list-inside text-sm text-slate-900">Some TestSample summary ....</ul>
+            <div className="border border-solid py-2 px-3 rounded-md shadow max-h-[160px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
+              <div className="space-y-1">
+                {testSample.spans.map((span, index) => (
+                  <div key={index} className="border border-solid bg-slate-100 border-slate-400 rounded-md text-sm truncate px-2 py-[1px]">
+                    {index + 1}. {span.name.replace(/_/g, " ")}
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
+
           <div>
-            <MilestoneModal milestones={milestones} updateMilestone={updateMilestone} addMilestone={addMilestone} />
+            <MilestoneModal
+              milestones={testSample.milestones}
+              updateMilestone={updateMilestone}
+              addMilestone={addMilestone}
+              deleteMilestone={deleteMilestone}
+            />
           </div>
           <div className="flex justify-center items-center">
             <ResultBar result={result} />
