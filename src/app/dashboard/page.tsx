@@ -7,26 +7,47 @@ import { ResultStatus } from "./components/ResultBar";
 import { Milestones } from "./components/MilestoneCard";
 import { FeedbackProps } from "./components/TestSampleExplenations";
 
-export interface SpanType {
+export interface MessageSpan {
   id: string;
   sequence_index: number;
-  role: string;
   content: string;
-  tool_calls: string | null;
+  type: string;
+  tool_execution: object | null;
 }
 
-export interface Trace {
-  trace_id: string;
+export interface AgentSpan {
+  id: string;
+  name: string;
+  sequence_index: number;
+  messages: MessageSpan[];
+}
+
+export interface TestSample {
+  test_sample_id: string;
   user_request: string;
-  spans: SpanType[];
+  spans: AgentSpan[];
 }
 
 const resultMockData: ResultStatus[] = [
   { numberPassed: 5, numberTotal: 5 },
   { numberPassed: 4, numberTotal: 5 },
+  { numberPassed: 5, numberTotal: 5 },
+  { numberPassed: 4, numberTotal: 5 },
 ];
 
 const milestonesMockData: Milestones[] = [
+  [
+    "Make sure emails are under 50 words long.",
+    "Planner should plan 4 steps: 1) find user email address, 2) find recipeint email address, 3) fetch relevant data, 4) send email.",
+    "email was sent succesfully if we get 200 response from gmail",
+    "make sure get_email_address gets called for both user and recipient",
+  ],
+  [
+    "Ensure email subjects are concise and informative.",
+    "The planner should execute the following steps: 1) authenticate user, 2) verify recipient details, 3) compose email content, 4) deliver email.",
+    "An email is considered sent successfully if a 200 status code is returned by the mail server.",
+    "Verify that get_user_email and get_recipient_email functions are executed for both sender and recipient.",
+  ],
   [
     "Make sure emails are under 50 words long.",
     "Planner should plan 4 steps: 1) find user email address, 2) find recipeint email address, 3) fetch relevant data, 4) send email.",
@@ -59,22 +80,22 @@ const feedbackList: FeedbackProps[] = [
 ];
 
 export default function TestSamples() {
-  const [traces, setTraces] = useState<Trace[]>([]);
+  const [testSamples, setTestSamples] = useState<TestSample[]>([]);
   const [milestones, setMilestones] = useState<Milestones[]>(milestonesMockData);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     async function fetchTraces() {
       try {
-        const response = await fetch("/dashboard/api/traces");
+        const response = await fetch("/dashboard/api/testSamples");
         if (response.ok) {
-          const data: Trace[] = await response.json();
-          setTraces(data);
+          const data: TestSample[] = await response.json();
+          setTestSamples(data);
         } else {
-          console.error("Failed to fetch traces");
+          console.error("Failed to fetch testSamples");
         }
       } catch (error) {
-        console.error("Error fetching traces:", error);
+        console.error("Error fetching testSamples:", error);
       } finally {
         setIsLoading(false);
       }
@@ -124,10 +145,10 @@ export default function TestSamples() {
             </div>
             <div className="w-10"></div>
           </div>
-          {traces.map((trace, index) => (
+          {testSamples.map((testSample, index) => (
             <TestSampleCard
-              key={trace.trace_id}
-              trace={trace}
+              key={testSample.test_sample_id}
+              testSample={testSample}
               index={index}
               result={resultMockData[index]}
               milestones={milestones[index]}

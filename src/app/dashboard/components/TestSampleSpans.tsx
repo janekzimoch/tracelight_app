@@ -1,14 +1,14 @@
 import React, { useRef, useEffect, useCallback } from "react";
-import { Trace, SpanType } from "../page";
+import { AgentSpan } from "../page";
 import { Avatar } from "@/components/ui/avatar";
 import Span from "./Span";
 
 export default function TestSampleSpans({
-  trace,
+  spans,
   highlightedSpanId,
   highlightedText,
 }: {
-  trace: Trace;
+  spans: AgentSpan[];
   highlightedSpanId: string | null;
   highlightedText: string | null;
 }) {
@@ -29,7 +29,7 @@ export default function TestSampleSpans({
 
   return (
     <div className="flex flex-col py-4 h-full w-full space-y-4">
-      {trace.spans.map((span: SpanType) => (
+      {spans.map((span) => (
         <div key={span.id} className="relative items-center" ref={setSpanRef(span.id)}>
           <Avatar className="absolute left-0 top-1/2 -translate-y-1/2 pointer-default border items-center justify-center text-slate-500 flex-none">
             {span.sequence_index + 1}

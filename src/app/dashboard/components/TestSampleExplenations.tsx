@@ -51,7 +51,7 @@ export default function TestSampleExplenations({
   return (
     <div className="py-4 space-y-2">
       {feedback.map((fb, index) => (
-        <div key={index} className="bg-green-200 border border-green-500 py-2 px-4 rounded-md text-left shadow">
+        <div key={index} className="bg-green-200 border border-green-500 py-2 px-4 mx-1 rounded-md text-left shadow">
           <h3 className="text-md font-bold">{fb.title}</h3>
           <p className="text-sm">{renderMessageWithReferences(fb.message, fb.references)}</p>
         </div>

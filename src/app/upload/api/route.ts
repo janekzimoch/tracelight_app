@@ -11,13 +11,101 @@ async function openDB(): Promise<Database> {
   });
 }
 
-type TestSample = {
+type NewTestSample = {
   user_request: string;
-  trace: any[];
+  traces: {
+    name: string;
+    messages: {
+      content: string | null;
+      type: string;
+      tool_execution?: {
+        query: string;
+        tool: string;
+        arguments: Record<string, any>;
+      } | null;
+    }[];
+  }[];
 };
 
-function isTestSample(obj: any): obj is TestSample {
-  return typeof obj === "object" && typeof obj.user_request === "string" && Array.isArray(obj.trace);
+function isNewTestSample(obj: any): obj is NewTestSample {
+  if (typeof obj !== "object" || obj === null) {
+    console.error("Object is not an object or is null");
+    return false;
+  }
+
+  console.log("Checking user_request:", obj.user_request);
+  console.log("Type of user_request:", typeof obj.user_request);
+
+  if (typeof obj.user_request !== "string") {
+    console.error("user_request is not a string");
+    console.error("Value of user_request:", JSON.stringify(obj.user_request));
+    return false;
+  }
+
+  if (!Array.isArray(obj.traces)) {
+    console.error("traces is not an array");
+    return false;
+  }
+
+  for (let i = 0; i < obj.traces.length; i++) {
+    const trace = obj.traces[i];
+    if (typeof trace !== "object" || trace === null) {
+      console.error(`trace at index ${i} is not an object or is null`);
+      return false;
+    }
+
+    if (typeof trace.name !== "string") {
+      console.error(`trace.name at index ${i} is not a string`);
+      return false;
+    }
+
+    if (!Array.isArray(trace.messages)) {
+      console.error(`trace.messages at index ${i} is not an array`);
+      return false;
+    }
+
+    for (let j = 0; j < trace.messages.length; j++) {
+      const message = trace.messages[j];
+      if (typeof message !== "object" || message === null) {
+        console.error(`message at trace ${i}, index ${j} is not an object or is null`);
+        return false;
+      }
+
+      if (typeof message.content !== "string" && message.content !== null) {
+        console.error(`message.content at trace ${i}, index ${j} is not a string or null`);
+        return false;
+      }
+
+      if (typeof message.type !== "string") {
+        console.error(`message.type at trace ${i}, index ${j} is not a string`);
+        return false;
+      }
+
+      if (message.tool_execution !== undefined && message.tool_execution !== null) {
+        if (typeof message.tool_execution !== "object") {
+          console.error(`message.tool_execution at trace ${i}, index ${j} is not an object or null`);
+          return false;
+        }
+
+        if (typeof message.tool_execution.query !== "string") {
+          console.error(`message.tool_execution.query at trace ${i}, index ${j} is not a string`);
+          return false;
+        }
+
+        if (typeof message.tool_execution.tool !== "string") {
+          console.error(`message.tool_execution.tool at trace ${i}, index ${j} is not a string`);
+          return false;
+        }
+
+        if (typeof message.tool_execution.arguments !== "object" || message.tool_execution.arguments === null) {
+          console.error(`message.tool_execution.arguments at trace ${i}, index ${j} is not an object`);
+          return false;
+        }
+      }
+    }
+  }
+
+  return true;
 }
 
 export async function POST(request: NextRequest) {
@@ -26,21 +114,36 @@ export async function POST(request: NextRequest) {
 
     // Create tables if they don't exist
     await db.exec(`
-      CREATE TABLE IF NOT EXISTS traces (
+      CREATE TABLE IF NOT EXISTS TestSample (
         id TEXT PRIMARY KEY,
-        user_request TEXT
-      );
-    `);
-
-    await db.exec(`
-      CREATE TABLE IF NOT EXISTS spans (
-        id TEXT PRIMARY KEY,
+        user_request TEXT,
         trace_id TEXT,
+        FOREIGN KEY (trace_id) REFERENCES Trace(id)
+      );
+
+      CREATE TABLE IF NOT EXISTS Trace (
+        id TEXT PRIMARY KEY,
+        test_sample_id TEXT,
+        upload_timestamp TEXT,
+        FOREIGN KEY (test_sample_id) REFERENCES TestSample(id)
+      );
+
+      CREATE TABLE IF NOT EXISTS AgentSpan (
+        id TEXT PRIMARY KEY,
         sequence_index INTEGER,
-        role TEXT,
+        trace_id TEXT,
+        name TEXT,
+        FOREIGN KEY (trace_id) REFERENCES Trace(id)
+      );
+
+      CREATE TABLE IF NOT EXISTS MessageSpan (
+        id TEXT PRIMARY KEY,
+        sequence_index INTEGER,
+        span_id TEXT,
         content TEXT,
-        tool_calls TEXT,
-        FOREIGN KEY (trace_id) REFERENCES traces(id)
+        type TEXT,
+        tool_execution TEXT,
+        FOREIGN KEY (span_id) REFERENCES AgentSpan(id)
       );
     `);
 
@@ -49,47 +152,68 @@ export async function POST(request: NextRequest) {
     const file = formData.get("file") as File | null;
 
     if (!file) {
+      console.error("No file provided in the request");
       return NextResponse.json({ message: "File is required" }, { status: 400 });
     }
 
     const fileData = await file.text();
-    const jsonData = JSON.parse(fileData);
 
-    // Check if jsonData is a list of lists
-    if (!Array.isArray(jsonData) || !jsonData.every(isTestSample)) {
+    let jsonData;
+    try {
+      jsonData = JSON.parse(fileData);
+      console.log("Full JSON data:", JSON.stringify(jsonData));
+    } catch (error) {
+      console.error("Failed to parse JSON:", error);
       return NextResponse.json({ message: "Invalid JSON format" }, { status: 400 });
     }
 
+    if (!Array.isArray(jsonData) || !jsonData.every(isNewTestSample)) {
+      console.error("JSON data does not match expected schema");
+      return NextResponse.json({ message: "Invalid JSON format: does not match expected schema" }, { status: 400 });
+    }
+
+    console.log(`Processing ${jsonData.length} test samples`);
+
     for (const testSample of jsonData) {
+      const testSampleId = uuidv4();
       const traceId = uuidv4();
-      const user_request = testSample.user_request;
-      const trace = testSample.trace;
+      const uploadTimestamp = new Date().toISOString();
 
-      // Insert the trace
-      await db.run("INSERT INTO traces (id, user_request) VALUES (?, ?)", traceId, user_request);
+      // Insert the TestSample
+      await db.run("INSERT INTO TestSample (id, user_request, trace_id) VALUES (?, ?, ?)", testSampleId, testSample.user_request, traceId);
 
-      // Insert each span within the trace
-      for (let i = 0; i < trace.length; i++) {
-        const span = trace[i];
-        const spanId = uuidv4();
-        const sequenceIndex = i;
-        const role = span.role || "";
-        let content = span.content || "";
-        const toolCalls = span.tool_calls ? JSON.stringify(span.tool_calls) : null;
+      // Insert the Trace
+      await db.run("INSERT INTO Trace (id, test_sample_id, upload_timestamp) VALUES (?, ?, ?)", traceId, testSampleId, uploadTimestamp);
 
-        if (span.tool_call_id) {
-          content = JSON.stringify({ tool_call_id: span.tool_call_id, content: span.content });
+      console.log(`Inserted TestSample with ID: ${testSampleId} and Trace with ID: ${traceId}`);
+
+      for (let agentIndex = 0; agentIndex < testSample.traces.length; agentIndex++) {
+        const trace = testSample.traces[agentIndex];
+        const agentSpanId = uuidv4();
+
+        // Insert the AgentSpan with sequence_index
+        await db.run("INSERT INTO AgentSpan (id, sequence_index, trace_id, name) VALUES (?, ?, ?, ?)", agentSpanId, agentIndex, traceId, trace.name);
+
+        console.log(`Inserted AgentSpan: ${trace.name} with ID: ${agentSpanId} and sequence_index: ${agentIndex}`);
+
+        // Insert each message within the trace as a MessageSpan
+        for (let messageIndex = 0; messageIndex < trace.messages.length; messageIndex++) {
+          const message = trace.messages[messageIndex];
+          const messageSpanId = uuidv4();
+          const toolExecution = message.tool_execution ? JSON.stringify(message.tool_execution) : null;
+
+          await db.run(
+            "INSERT INTO MessageSpan (id, sequence_index, span_id, content, type, tool_execution) VALUES (?, ?, ?, ?, ?, ?)",
+            messageSpanId,
+            messageIndex,
+            agentSpanId,
+            message.content,
+            message.type,
+            toolExecution
+          );
+
+          console.log(`Inserted MessageSpan for AgentSpan: ${agentSpanId} with sequence_index: ${messageIndex}`);
         }
-
-        await db.run(
-          "INSERT INTO spans (id, trace_id, sequence_index, role, content, tool_calls) VALUES (?, ?, ?, ?, ?, ?)",
-          spanId,
-          traceId,
-          sequenceIndex,
-          role,
-          content,
-          toolCalls
-        );
       }
     }
 
@@ -99,6 +223,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ message: "File uploaded successfully" }, { status: 200 });
   } catch (error) {
     console.error("Error handling the request:", error);
-    return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json({ message: "Internal Server Error", error: String(error) }, { status: 500 });
   }
 }
