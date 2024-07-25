@@ -5,28 +5,24 @@ import { Card } from "@/components/ui/card";
 import React, { useState } from "react";
 import { TrashIcon, ChevronDownIcon, ChevronUpIcon } from "@radix-ui/react-icons";
 import { Button } from "@/components/ui/button";
-import ResultBar, { ResultStatus } from "./ResultBar";
+import ResultBar from "./ResultBar";
 import MilestoneModal from "./MilestoneModal";
 import TestSampleSpans from "./TestSampleSpans";
-import TestSampleExplenations, { FeedbackProps } from "./TestSampleExplenations";
+import TestSampleExplenations from "./TestSampleExplenations";
 import { TestSample } from "../api/testSamples/route";
 
 export default function TestSampleCard({
   testSample,
-  result,
   index,
   updateMilestone,
   addMilestone,
   deleteMilestone,
-  feedback,
 }: {
   testSample: TestSample;
-  result: ResultStatus;
   index: number;
   updateMilestone: (milestoneId: string, newText: string) => Promise<void>;
   addMilestone: (text: string) => void;
   deleteMilestone: (milestoneId: string) => Promise<void>;
-  feedback: FeedbackProps[];
 }) {
   const [expanded, setExpanded] = useState(false);
   const [highlightedSpanId, setHighlightedSpanId] = useState<string | null>(null);
@@ -77,7 +73,7 @@ export default function TestSampleCard({
             />
           </div>
           <div className="flex justify-center items-center">
-            <ResultBar result={result} />
+            <ResultBar testSample={testSample} />
           </div>
         </div>
         <Button variant="ghost" size="icon" className="text-red-500">
@@ -109,7 +105,10 @@ export default function TestSampleCard({
               <div className="flex flex-col">
                 <div className="text-center pb-2 text-md text-muted-foreground">Results Explanation</div>
                 <div className="overflow-y-auto h-[400px] no-scrollbar">
-                  <TestSampleExplenations feedback={feedback} onReferenceClick={handleReferenceClick} />
+                  <TestSampleExplenations
+                    feedback={testSample.milestones.map((milestone) => milestone.test_result)}
+                    onReferenceClick={handleReferenceClick}
+                  />
                 </div>
               </div>
             </div>

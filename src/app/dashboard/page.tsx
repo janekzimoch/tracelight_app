@@ -4,33 +4,7 @@ import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import TestSampleCard from "./components/TestSampleCard";
-import { ResultStatus } from "./components/ResultBar";
-import { FeedbackProps } from "./components/TestSampleExplenations";
 import { TestSample } from "./api/testSamples/route";
-
-const resultMockData: ResultStatus[] = [
-  { numberPassed: 5, numberTotal: 5 },
-  { numberPassed: 4, numberTotal: 5 },
-  { numberPassed: 5, numberTotal: 5 },
-  { numberPassed: 4, numberTotal: 5 },
-];
-
-const feedbackList: FeedbackProps[] = [
-  {
-    title: "Send Email",
-    message:
-      "The sub-request to send an email to John Doe was successfully completed. {ref0} The email lookup returned the correct email address, and the send email function confirmed that the email was sent successfully. {ref1}",
-    references: [
-      { spanId: "a638e237-b7a4-483c-badd-afe55685ead8", text: "Error occurred" },
-      { spanId: "d3d79c63-ed6c-431f-865c-addfe6981f7a", text: "3. Use the Internet Research Agent with the query: " },
-    ],
-  },
-  {
-    title: "Fetch Emails",
-    message: "The agent successfully retrieved the latest 5 emails sent from 'user123@gmail.com' to 'john@example.com'.",
-    references: [],
-  },
-];
 
 export default function TestSamples() {
   const [testSamples, setTestSamples] = useState<TestSample[]>([]);
@@ -145,7 +119,7 @@ export default function TestSamples() {
             <div className="flex-1 relative mb-4">
               <div className="grid grid-cols-4 gap-4 text-center text-md text-muted-foreground">
                 <h3>User Request</h3>
-                <h3>Traces</h3>
+                <h3>Trace</h3>
                 <h3>Milestones</h3>
                 <h3>Results</h3>
               </div>
@@ -165,8 +139,6 @@ export default function TestSamples() {
               updateMilestone={updateMilestone}
               addMilestone={(text: string) => addMilestone(testSample.test_sample_id, text)}
               deleteMilestone={deleteMilestone}
-              result={resultMockData[index]}
-              feedback={feedbackList}
             />
           ))}
         </div>

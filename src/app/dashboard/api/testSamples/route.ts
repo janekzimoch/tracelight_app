@@ -10,50 +10,51 @@ async function openDB(): Promise<Database> {
   });
 }
 
-export interface MessageSpan {
+export type MessageSpan = {
   id: string;
   sequence_index: number;
   content: string;
   type: string;
   tool_execution: object | null;
-}
+};
 
-export interface AgentSpan {
+export type AgentSpan = {
   id: string;
   name: string;
   sequence_index: number;
   messages: MessageSpan[];
-}
+};
 
-export interface TestSample {
+export type TestSample = {
   test_sample_id: string;
   trace_id: string;
   user_request: string;
   spans: AgentSpan[];
   milestones: Milestone[];
-}
+};
 
-export interface Milestone {
+export type Milestone = {
   id: string;
   sequence_index: number;
   text: string;
-  test_results: TestResult[];
-}
+  test_result: TestResult | null;
+};
 
-export interface TestResult {
+export type TestResult = {
   id: string;
   test_title: string;
   feedback_message: string;
+  pass: boolean;
   span_references: SpanReference[];
-}
+};
 
-export interface SpanReference {
+export type SpanReference = {
   id: string;
   agent_span_id: string;
   reference_text: string;
-}
+};
 
-interface QueryResult {
+type QueryResult = {
   test_sample_id: string;
   user_request: string;
   trace_id: string;
@@ -71,9 +72,10 @@ interface QueryResult {
   test_result_id: string | null;
   test_result_title: string | null;
   test_result_feedback: string | null;
+  test_is_passed: boolean | null;
   span_reference_id: string | null;
   reference_text: string | null;
-}
+};
 
 export async function GET() {
   try {
@@ -98,6 +100,7 @@ export async function GET() {
         tr.id as test_result_id,
         tr.test_title as test_result_title,
         tr.feedback_message as test_result_feedback,
+        tr.pass as test_is_passed,
         sr.id as span_reference_id,
         sr.reference_text,
         sr.agent_span_id as span_reference_agent_span_id
@@ -159,24 +162,23 @@ export async function GET() {
           id: row.milestone_id,
           sequence_index: row.milestone_index!,
           text: row.milestone_text!,
-          test_results: [],
+          test_result: null,
         };
         acc[row.test_sample_id].milestones.push(currentMilestone);
       }
 
-      let currentTestResult = currentMilestone?.test_results.find((result) => result.id === row.test_result_id);
-      if (!currentTestResult && row.test_result_id) {
-        currentTestResult = {
+      if (row.test_result_id && currentMilestone && !currentMilestone.test_result) {
+        currentMilestone.test_result = {
           id: row.test_result_id,
           test_title: row.test_result_title!,
           feedback_message: row.test_result_feedback!,
+          pass: row.test_is_passed!,
           span_references: [],
         };
-        currentMilestone?.test_results.push(currentTestResult);
       }
 
-      if (row.span_reference_id) {
-        currentTestResult?.span_references.push({
+      if (row.span_reference_id && currentMilestone?.test_result) {
+        currentMilestone.test_result.span_references.push({
           id: row.span_reference_id,
           agent_span_id: row.agent_span_id!,
           reference_text: row.reference_text!,
@@ -186,7 +188,7 @@ export async function GET() {
       return acc;
     }, {} as Record<string, TestSample>);
 
-    // Sort spans, messages, milestones, test results, and references by their sequence_index or ID
+    // Sort spans, messages, milestones, and span references
     Object.values(groupedResults).forEach((testSample: TestSample) => {
       testSample.spans.sort((a, b) => a.sequence_index - b.sequence_index);
       testSample.spans.forEach((span: AgentSpan) => {
@@ -194,10 +196,9 @@ export async function GET() {
       });
       testSample.milestones.sort((a, b) => a.sequence_index - b.sequence_index);
       testSample.milestones.forEach((milestone: Milestone) => {
-        milestone.test_results.sort((a, b) => a.id.localeCompare(b.id));
-        milestone.test_results.forEach((result: TestResult) => {
-          result.span_references.sort((a, b) => a.id.localeCompare(b.id));
-        });
+        if (milestone.test_result) {
+          milestone.test_result.span_references.sort((a, b) => a.id.localeCompare(b.id));
+        }
       });
     });
 

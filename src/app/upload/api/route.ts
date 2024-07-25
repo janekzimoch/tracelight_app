@@ -160,6 +160,7 @@ export async function POST(request: NextRequest) {
         trace_id TEXT,
         test_title TEXT,
         feedback_message TEXT,
+        pass INTEGER,
         FOREIGN KEY (milestone_id) REFERENCES Milestone(id),
         FOREIGN KEY (trace_id) REFERENCES Trace(id)
       );
