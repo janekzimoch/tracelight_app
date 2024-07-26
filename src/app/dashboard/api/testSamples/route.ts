@@ -81,7 +81,8 @@ export async function GET() {
   try {
     const db = await openDB();
 
-    const results = await db.all<QueryResult[]>(`
+    // Fetch TestSamples, Traces, AgentSpans, MessageSpans, and Milestones
+    const mainQuery = `
       SELECT 
         ts.id as test_sample_id,
         ts.user_request,
@@ -96,14 +97,7 @@ export async function GET() {
         msp.tool_execution,
         ml.id as milestone_id,
         ml.sequence_index as milestone_index,
-        ml.text as milestone_text,
-        tr.id as test_result_id,
-        tr.test_title as test_result_title,
-        tr.feedback_message as test_result_feedback,
-        tr.pass as test_is_passed,
-        sr.id as span_reference_id,
-        sr.reference_text,
-        sr.agent_span_id as span_reference_agent_span_id
+        ml.text as milestone_text
       FROM 
         TestSample ts
       JOIN 
@@ -114,13 +108,48 @@ export async function GET() {
         MessageSpan msp ON asp.id = msp.agent_span_id
       LEFT JOIN 
         Milestone ml ON ts.id = ml.test_sample_id
-      LEFT JOIN 
-        TestResult tr ON ml.id = tr.milestone_id
-      LEFT JOIN 
-        SpanReference sr ON tr.id = sr.test_result_id
       ORDER BY 
-        ts.id, asp.sequence_index, msp.sequence_index, ml.sequence_index, tr.id, sr.id
-    `);
+        ts.id, asp.sequence_index, msp.sequence_index, ml.sequence_index
+    `;
+
+    const results = await db.all(mainQuery);
+
+    // Fetch TestResults separately
+    const testResultsQuery = `
+      SELECT 
+        tr.id,
+        tr.milestone_id,
+        tr.test_title,
+        tr.feedback_message,
+        tr.pass
+      FROM 
+        TestResult tr
+      JOIN 
+        Milestone ml ON tr.milestone_id = ml.id
+      JOIN 
+        TestSample ts ON ml.test_sample_id = ts.id
+    `;
+
+    const testResults = await db.all(testResultsQuery);
+
+    // Fetch SpanReferences separately
+    const spanReferencesQuery = `
+      SELECT 
+        sr.id,
+        sr.test_result_id,
+        sr.agent_span_id,
+        sr.reference_text
+      FROM 
+        SpanReference sr
+      JOIN 
+        TestResult tr ON sr.test_result_id = tr.id
+      JOIN 
+        Milestone ml ON tr.milestone_id = ml.id
+      JOIN 
+        TestSample ts ON ml.test_sample_id = ts.id
+    `;
+
+    const spanReferences = await db.all(spanReferencesQuery);
 
     await db.close();
 
@@ -135,8 +164,8 @@ export async function GET() {
         };
       }
 
-      let currentSpan = acc[row.test_sample_id].spans.find((span) => span.id === row.agent_span_id);
-      if (!currentSpan) {
+      let currentSpan = acc[row.test_sample_id].spans.find((span: AgentSpan) => span.id === row.agent_span_id);
+      if (!currentSpan && row.agent_span_id) {
         currentSpan = {
           id: row.agent_span_id,
           name: row.agent_span_name,
@@ -146,7 +175,7 @@ export async function GET() {
         acc[row.test_sample_id].spans.push(currentSpan);
       }
 
-      if (row.message_span_id) {
+      if (row.message_span_id && currentSpan) {
         currentSpan.messages.push({
           id: row.message_span_id,
           sequence_index: row.message_span_index!,
@@ -156,7 +185,7 @@ export async function GET() {
         });
       }
 
-      let currentMilestone = acc[row.test_sample_id].milestones.find((milestone) => milestone.id === row.milestone_id);
+      let currentMilestone = acc[row.test_sample_id].milestones.find((milestone: Milestone) => milestone.id === row.milestone_id);
       if (!currentMilestone && row.milestone_id) {
         currentMilestone = {
           id: row.milestone_id,
@@ -167,26 +196,39 @@ export async function GET() {
         acc[row.test_sample_id].milestones.push(currentMilestone);
       }
 
-      if (row.test_result_id && currentMilestone && !currentMilestone.test_result) {
-        currentMilestone.test_result = {
-          id: row.test_result_id,
-          test_title: row.test_result_title!,
-          feedback_message: row.test_result_feedback!,
-          pass: row.test_is_passed!,
-          span_references: [],
-        };
-      }
-
-      if (row.span_reference_id && currentMilestone?.test_result) {
-        currentMilestone.test_result.span_references.push({
-          id: row.span_reference_id,
-          agent_span_id: row.agent_span_id!,
-          reference_text: row.reference_text!,
-        });
-      }
-
       return acc;
     }, {} as Record<string, TestSample>);
+
+    // Add TestResults to Milestones
+    testResults.forEach((testResult) => {
+      Object.values(groupedResults).forEach((testSample) => {
+        const milestone = testSample.milestones.find((m) => m.id === testResult.milestone_id);
+        if (milestone) {
+          milestone.test_result = {
+            id: testResult.id,
+            test_title: testResult.test_title,
+            feedback_message: testResult.feedback_message,
+            pass: testResult.pass,
+            span_references: [],
+          };
+        }
+      });
+    });
+
+    // Add SpanReferences to TestResults
+    spanReferences.forEach((spanReference) => {
+      Object.values(groupedResults).forEach((testSample) => {
+        testSample.milestones.forEach((milestone) => {
+          if (milestone.test_result && milestone.test_result.id === spanReference.test_result_id) {
+            milestone.test_result.span_references.push({
+              id: spanReference.id,
+              agent_span_id: spanReference.agent_span_id,
+              reference_text: spanReference.reference_text,
+            });
+          }
+        });
+      });
+    });
 
     // Sort spans, messages, milestones, and span references
     Object.values(groupedResults).forEach((testSample: TestSample) => {

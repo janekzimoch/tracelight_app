@@ -25,11 +25,9 @@ export async function POST(request: NextRequest) {
 
     // Save test results to database
     for (const result of testResults) {
-      const testResultId = uuidv4();
-
       // Insert into TestResult table
-      await db.run("INSERT INTO TestResult (id, milestone_id, trace_id, test_title, feedback_message, pass) VALUES (?, ?, ?, ?, ?)", [
-        testResultId,
+      await db.run("INSERT INTO TestResult (id, milestone_id, trace_id, test_title, feedback_message, pass) VALUES (?, ?, ?, ?, ?, ?)", [
+        result.result.id,
         result.milestone_id,
         result.trace_id,
         result.result.test_title,
@@ -41,7 +39,7 @@ export async function POST(request: NextRequest) {
       for (const spanRef of result.result.span_references) {
         await db.run("INSERT INTO SpanReference (id, test_result_id, agent_span_id, reference_text) VALUES (?, ?, ?, ?)", [
           uuidv4(),
-          testResultId,
+          result.result.id,
           spanRef.agent_span_id,
           spanRef.reference_text,
         ]);

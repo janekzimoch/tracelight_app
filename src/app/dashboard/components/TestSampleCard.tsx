@@ -95,14 +95,14 @@ export default function TestSampleCard({
           <div className="border-t w-[90%] mx-auto my-4"></div>
 
           <div className="relative bg-slate-50 shadow-sm rounded-md py-4">
-            <div className="grid px-10 grid-cols-2 gap-4  text-center pb-2 text-md text-muted-foreground">
-              <div className="flex flex-col overflow-visible relative">
+            <div className="grid px-10 grid-cols-5 gap-4  text-center pb-2 text-md text-muted-foreground">
+              <div className="flex flex-col col-span-3 overflow-visible relative">
                 <div className="text-center pb-2 pl-12 text-md text-muted-foreground">Spans</div>
                 <div className="overflow-y-auto h-[400px] no-scrollbar">
                   <TestSampleSpans spans={testSample.spans} highlightedSpanId={highlightedSpanId} highlightedText={highlightedText} />
                 </div>
               </div>
-              <div className="flex flex-col">
+              <div className="flex flex-col col-span-2">
                 <div className="text-center pb-2 text-md text-muted-foreground">Results Explanation</div>
                 <div className="overflow-y-auto h-[400px] no-scrollbar">
                   <TestSampleExplenations

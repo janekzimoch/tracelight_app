@@ -16,6 +16,7 @@ export default function TestSampleExplanations({
       if (match) {
         const refIndex = parseInt(match[1], 10);
         const reference = references[refIndex];
+        console.log("reference.id:", reference.id);
         if (reference) {
           return (
             <TooltipProvider key={index}>
@@ -39,7 +40,6 @@ export default function TestSampleExplanations({
       return part;
     });
   };
-
   return (
     <div className="py-4 space-y-2">
       {feedback

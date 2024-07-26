@@ -33,9 +33,6 @@ function isNewTestSample(obj: any): obj is NewTestSample {
     return false;
   }
 
-  console.log("Checking user_request:", obj.user_request);
-  console.log("Type of user_request:", typeof obj.user_request);
-
   if (typeof obj.user_request !== "string") {
     console.error("user_request is not a string");
     console.error("Value of user_request:", JSON.stringify(obj.user_request));

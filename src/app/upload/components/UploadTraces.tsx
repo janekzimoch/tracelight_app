@@ -67,10 +67,8 @@ export default function UploadTraces(): JSX.Element {
       });
 
       if (response.ok) {
-        console.log("File uploaded successfully");
         router.push("/dashboard");
       } else {
-        console.log("response", response);
         setError("Failed to upload file.");
       }
     } catch (error) {
