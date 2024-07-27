@@ -13,7 +13,7 @@ async function openDB(): Promise<Database> {
 async function checkDataExists(): Promise<boolean> {
   const db = await openDB();
   try {
-    const result = await db.get("SELECT COUNT(*) as count FROM traces");
+    const result = await db.get("SELECT COUNT(*) as count FROM TestSample");
     return result.count > 0;
   } catch {
     return false;

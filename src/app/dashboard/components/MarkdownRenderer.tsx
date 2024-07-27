@@ -13,6 +13,11 @@ interface MarkdownRendererProps {
 }
 
 const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, isHighlighted = false, highlightedText = null }) => {
+  const removeQuotes = (text: string | null) => {
+    if (!text) return text;
+    return text.replace(/^['"]|['"]$/g, "");
+  };
+
   const highlightContent = (text: string, highlight: string) => {
     if (!highlight) return text;
     const escapedHighlight = highlight.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -27,7 +32,8 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, isHighligh
     .replace(/^\t/gm, "") // Remove leading tabs
     .trim();
 
-  const finalContent = isHighlighted && highlightedText ? highlightContent(processedContent, highlightedText) : processedContent;
+  const sanitizedHighlightText = removeQuotes(highlightedText);
+  const finalContent = isHighlighted && sanitizedHighlightText ? highlightContent(processedContent, sanitizedHighlightText) : processedContent;
 
   return (
     <div className="prose prose-sm max-w-none">

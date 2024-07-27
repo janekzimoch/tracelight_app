@@ -1,22 +1,28 @@
-# Use the official Node.js image.
-# https://hub.docker.com/_/node
-FROM node:20-alpine
+# Use the official Node.js image as the base image
+FROM node:18-alpine
 
-# Create and change to the app directory.
-WORKDIR /usr/src/app
+# Set the working directory
+WORKDIR /app
+
+# Copy package.json and package-lock.json
+COPY package*.json ./
 
 # Install dependencies
-COPY package*.json ./
 RUN npm install
 
-# Copy application code.
+# Copy the rest of the application code
 COPY . .
 
-# Build the Next.js application
+# Build the Next.js app
 RUN npm run build
 
 # Expose the port the app runs on
 EXPOSE 3000
 
-# Run the web server on container start.
+# Define environment variable for production
+ENV NODE_ENV production
+
+ENV OPENAI_API_KEY placeholder
+
+# Command to run the app
 CMD ["npm", "start"]

@@ -25,7 +25,15 @@ interface FeedbackItem {
 }
 
 dotenv.config();
-const openai = new OpenAI({ apiKey: process.env["OPENAI_API_KEY"] });
+
+function getOpenAIClient() {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) {
+    throw new Error("OPENAI_API_KEY is not set");
+  }
+  return new OpenAI({ apiKey });
+}
+const openai = getOpenAIClient();
 let openaiModel = "gpt-4o";
 
 async function callOpenai(messages: ChatCompletionMessageParam[], json: boolean = false): Promise<string> {
