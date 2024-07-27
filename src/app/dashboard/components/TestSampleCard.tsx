@@ -98,7 +98,7 @@ export default function TestSampleCard({
             <div className="grid px-10 grid-cols-5 gap-4  text-center pb-2 text-md text-muted-foreground">
               <div className="flex flex-col col-span-3 overflow-visible relative">
                 <div className="text-center pb-2 pl-12 text-md text-muted-foreground">Spans</div>
-                <div className="overflow-y-auto h-[400px] no-scrollbar">
+                <div className="overflow-y-auto h-[400px] scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
                   <TestSampleSpans spans={testSample.spans} highlightedSpanId={highlightedSpanId} highlightedText={highlightedText} />
                 </div>
               </div>

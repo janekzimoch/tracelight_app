@@ -7,7 +7,7 @@ export default function Span({ span, isHighlighted, highlightedText }: { span: A
 
   return (
     <div
-      className={`relative mx-1 bg-white col-span-2 overflow-hidden border border-solid transition-transform duration-300 ease-in-out rounded-lg shadow-sm group hover:shadow-md ${
+      className={`relative mx-1 bg-white overflow-hidden border border-solid transition-transform duration-300 ease-in-out rounded-lg shadow-sm group hover:shadow-md ${
         isHighlighted ? "ring-2 ring-blue-500" : ""
       }`}
     >

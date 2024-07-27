@@ -21,6 +21,7 @@ export default function TestSamples() {
       const response = await fetch("/dashboard/api/testSamples");
       if (response.ok) {
         const data: TestSample[] = await response.json();
+        console.log("data[0].spans[0].messages:", data[0].spans[0].messages);
         setTestSamples(data);
       } else {
         console.error("Failed to fetch testSamples");

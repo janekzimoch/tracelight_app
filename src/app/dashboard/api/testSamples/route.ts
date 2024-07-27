@@ -153,9 +153,11 @@ export async function GET() {
 
     await db.close();
 
-    const groupedResults: Record<string, TestSample> = results.reduce((acc, row) => {
-      if (!acc[row.test_sample_id]) {
-        acc[row.test_sample_id] = {
+    const groupedResults: Record<string, TestSample> = {};
+
+    results.forEach((row) => {
+      if (!groupedResults[row.test_sample_id]) {
+        groupedResults[row.test_sample_id] = {
           test_sample_id: row.test_sample_id,
           trace_id: row.trace_id,
           user_request: row.user_request,
@@ -164,7 +166,7 @@ export async function GET() {
         };
       }
 
-      let currentSpan = acc[row.test_sample_id].spans.find((span: AgentSpan) => span.id === row.agent_span_id);
+      let currentSpan = groupedResults[row.test_sample_id].spans.find((span) => span.id === row.agent_span_id);
       if (!currentSpan && row.agent_span_id) {
         currentSpan = {
           id: row.agent_span_id,
@@ -172,32 +174,34 @@ export async function GET() {
           sequence_index: row.agent_span_index,
           messages: [],
         };
-        acc[row.test_sample_id].spans.push(currentSpan);
+        groupedResults[row.test_sample_id].spans.push(currentSpan);
       }
 
       if (row.message_span_id && currentSpan) {
-        currentSpan.messages.push({
-          id: row.message_span_id,
-          sequence_index: row.message_span_index!,
-          content: row.content!,
-          type: row.type!,
-          tool_execution: row.tool_execution ? JSON.parse(row.tool_execution) : null,
-        });
+        const existingMessage = currentSpan.messages.find((msg) => msg.id === row.message_span_id);
+        if (!existingMessage) {
+          currentSpan.messages.push({
+            id: row.message_span_id,
+            sequence_index: row.message_span_index!,
+            content: row.content!,
+            type: row.type!,
+            tool_execution: row.tool_execution ? JSON.parse(row.tool_execution) : null,
+          });
+        }
       }
 
-      let currentMilestone = acc[row.test_sample_id].milestones.find((milestone: Milestone) => milestone.id === row.milestone_id);
-      if (!currentMilestone && row.milestone_id) {
-        currentMilestone = {
-          id: row.milestone_id,
-          sequence_index: row.milestone_index!,
-          text: row.milestone_text!,
-          test_result: null,
-        };
-        acc[row.test_sample_id].milestones.push(currentMilestone);
+      if (row.milestone_id) {
+        const existingMilestone = groupedResults[row.test_sample_id].milestones.find((m) => m.id === row.milestone_id);
+        if (!existingMilestone) {
+          groupedResults[row.test_sample_id].milestones.push({
+            id: row.milestone_id,
+            sequence_index: row.milestone_index!,
+            text: row.milestone_text!,
+            test_result: null,
+          });
+        }
       }
-
-      return acc;
-    }, {} as Record<string, TestSample>);
+    });
 
     // Add TestResults to Milestones
     testResults.forEach((testResult) => {
