@@ -10,6 +10,14 @@ export default function SubSpan({ message }: { message: MessageSpan }) {
     setIsExpanded(!isExpanded);
   };
 
+  const renderContent = () => {
+    if (message.type === "ai" && message.tool_execution) {
+      return <MarkdownRenderer content={JSON.stringify(message.tool_execution, null, 2)} />;
+    } else {
+      return <MarkdownRenderer content={message.content} />;
+    }
+  };
+
   return (
     <div
       className="relative mx-1 my-1 bg-slate-50 overflow-hidden border border-solid rounded-lg shadow-sm group cursor-pointer"
@@ -22,7 +30,7 @@ export default function SubSpan({ message }: { message: MessageSpan }) {
             isExpanded ? "max-h-[150px]" : "max-h-0"
           } overflow-y-auto`}
         >
-          <MarkdownRenderer content={message.content} />
+          {renderContent()}
         </div>
       </div>
       <div className="absolute top-2 right-2 text-xs text-muted-foreground">{isExpanded ? <ChevronUpIcon /> : <ChevronDownIcon />}</div>
