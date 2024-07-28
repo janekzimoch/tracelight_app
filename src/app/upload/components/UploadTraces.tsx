@@ -5,24 +5,25 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { Button } from "@/components/ui/button";
 
 export default function UploadTraces(): JSX.Element {
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
   const [error, setError] = useState<string>("");
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const router = useRouter();
 
-  const handleFileSelection = (selectedFile: File | null) => {
-    if (selectedFile && selectedFile.type === "application/json") {
-      setFile(selectedFile);
-      setError("");
-    } else {
-      setFile(null);
-      setError("Please select a JSON file.");
+  const handleFileSelection = (selectedFiles: FileList | null) => {
+    if (selectedFiles) {
+      const newFiles = Array.from(selectedFiles).filter((file) => file.type === "application/json");
+      if (newFiles.length > 0) {
+        setFiles((prevFiles) => [...prevFiles, ...newFiles]);
+        setError("");
+      } else {
+        setError("Please select JSON files only.");
+      }
     }
   };
 
   const handleFileSelect = (event: ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = event.target.files?.[0] || null;
-    handleFileSelection(selectedFile);
+    handleFileSelection(event.target.files);
   };
 
   const handleDragEnter = (event: DragEvent<HTMLLabelElement>) => {
@@ -46,30 +47,30 @@ export default function UploadTraces(): JSX.Element {
     event.preventDefault();
     event.stopPropagation();
     setIsDragging(false);
-
-    const droppedFile = event.dataTransfer.files[0];
-    handleFileSelection(droppedFile);
+    handleFileSelection(event.dataTransfer.files);
   };
 
   const handleUpload = async () => {
-    if (!file) {
-      setError("Please select a file first.");
+    if (files.length === 0) {
+      setError("Please select at least one file.");
       return;
     }
 
     const formData = new FormData();
-    formData.append("file", file);
+    files.forEach((file, index) => {
+      formData.append(`file${index}`, file);
+    });
 
     try {
       const response = await fetch("/upload/api/", {
         method: "POST",
-        body: formData, // Send formData instead of JSON
+        body: formData,
       });
 
       if (response.ok) {
         router.push("/dashboard");
       } else {
-        setError("Failed to upload file.");
+        setError("Failed to upload files.");
       }
     } catch (error) {
       console.error(error);
@@ -81,7 +82,7 @@ export default function UploadTraces(): JSX.Element {
     <Card className="w-[350px] shadow-lg">
       <CardHeader>
         <CardTitle>Upload traces</CardTitle>
-        <CardDescription>Traces must be a JSON file</CardDescription>
+        <CardDescription>Select multiple JSON files</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="grid w-full items-center gap-4">
@@ -95,17 +96,26 @@ export default function UploadTraces(): JSX.Element {
           >
             <div className="text-center max-w-[300px] w-full px-2 pointer-events-none">
               <div className="w-full mx-auto">
-                <div className="font-medium text-muted-foreground truncate">{file ? file.name : "Drag and drop a file here"}</div>
+                <div className="font-medium text-muted-foreground truncate">
+                  {files.length > 0 ? `${files.length} file(s) selected` : "Drag and drop files here"}
+                </div>
               </div>
-              {!file && <p className="text-sm text-muted-foreground">or click to select a file</p>}
+              {files.length === 0 && <p className="text-sm text-muted-foreground">or click to select files</p>}
             </div>
-            <input type="file" accept=".json" onChange={handleFileSelect} className="hidden" />
+            <input type="file" accept=".json" onChange={handleFileSelect} className="hidden" multiple />
           </label>
           {error && <p className="text-red-500 text-sm">{error}</p>}
+          {files.length > 0 && (
+            <ul className="text-sm">
+              {files.map((file, index) => (
+                <li key={index}>{file.name}</li>
+              ))}
+            </ul>
+          )}
         </div>
       </CardContent>
       <CardFooter className="flex justify-end">
-        <Button onClick={handleUpload} disabled={!file}>
+        <Button onClick={handleUpload} disabled={files.length === 0}>
           Upload
         </Button>
       </CardFooter>

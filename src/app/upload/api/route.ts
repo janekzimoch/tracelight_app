@@ -3,6 +3,7 @@ import { open } from "sqlite";
 import { Database } from "sqlite";
 import { NextRequest, NextResponse } from "next/server";
 import { v4 as uuidv4 } from "uuid";
+import { parseLangSmithTraces } from "@/backend/parseLangSmithTraces";
 
 async function openDB(): Promise<Database> {
   return open({
@@ -172,34 +173,41 @@ export async function POST(request: NextRequest) {
       );
     `);
 
-    // Extract the file data from the request
     const formData = await request.formData();
-    const file = formData.get("file") as File | null;
+    const files: File[] = [];
 
-    if (!file) {
-      console.error("No file provided in the request");
-      return NextResponse.json({ message: "File is required" }, { status: 400 });
+    for (const [key, value] of formData.entries()) {
+      if (value instanceof File) {
+        files.push(value);
+      }
     }
 
-    const fileData = await file.text();
-
-    let jsonData;
-    try {
-      jsonData = JSON.parse(fileData);
-      console.log("Full JSON data:", JSON.stringify(jsonData));
-    } catch (error) {
-      console.error("Failed to parse JSON:", error);
-      return NextResponse.json({ message: "Invalid JSON format" }, { status: 400 });
+    if (files.length === 0) {
+      console.error("No files provided in the request");
+      return NextResponse.json({ message: "At least one file is required" }, { status: 400 });
     }
 
-    if (!Array.isArray(jsonData) || !jsonData.every(isNewTestSample)) {
+    const jsonDataList = [];
+    for (const file of files) {
+      const fileData = await file.text();
+      try {
+        const jsonData = JSON.parse(fileData);
+        jsonDataList.push(jsonData);
+      } catch (error) {
+        console.error("Failed to parse JSON:", error);
+        return NextResponse.json({ message: "Invalid JSON format" }, { status: 400 });
+      }
+    }
+    const langSmithTraces = parseLangSmithTraces(jsonDataList);
+
+    if (!Array.isArray(langSmithTraces) || !langSmithTraces.every(isNewTestSample)) {
       console.error("JSON data does not match expected schema");
       return NextResponse.json({ message: "Invalid JSON format: does not match expected schema" }, { status: 400 });
     }
 
-    console.log(`Processing ${jsonData.length} test samples`);
+    console.log(`Processing ${langSmithTraces.length} test samples`);
 
-    for (const testSample of jsonData) {
+    for (const testSample of langSmithTraces) {
       const testSampleId = uuidv4();
       const traceId = uuidv4();
       const uploadTimestamp = new Date().toISOString();
