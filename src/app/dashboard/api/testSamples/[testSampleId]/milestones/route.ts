@@ -5,10 +5,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { v4 as uuidv4 } from "uuid";
 
 async function openDB(): Promise<Database> {
-  return open({
+  const db = await open({
     filename: "./data.db",
     driver: sqlite3.Database,
   });
+  await db.exec("PRAGMA foreign_keys = ON;");
+  return db;
 }
 
 export async function POST(request: NextRequest, { params }: { params: { testSampleId: string } }) {

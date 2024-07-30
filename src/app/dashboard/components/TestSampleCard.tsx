@@ -17,12 +17,14 @@ export default function TestSampleCard({
   updateMilestone,
   addMilestone,
   deleteMilestone,
+  deleteTestSample,
 }: {
   testSample: TestSample;
   index: number;
   updateMilestone: (milestoneId: string, newText: string) => Promise<void>;
   addMilestone: (text: string) => void;
   deleteMilestone: (milestoneId: string) => Promise<void>;
+  deleteTestSample: (testSampleId: string) => Promise<void>;
 }) {
   const [expanded, setExpanded] = useState(false);
   const [highlightedSpanId, setHighlightedSpanId] = useState<string | null>(null);
@@ -76,7 +78,7 @@ export default function TestSampleCard({
             <ResultBar testSample={testSample} />
           </div>
         </div>
-        <Button variant="ghost" size="icon" className="text-red-500">
+        <Button variant="ghost" size="icon" className="text-red-500" onClick={() => deleteTestSample(testSample.test_sample_id)}>
           <TrashIcon width="20" height="20" />
           <span className="sr-only">Delete</span>
         </Button>

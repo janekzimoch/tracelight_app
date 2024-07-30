@@ -4,10 +4,12 @@ import { Database } from "sqlite";
 import { NextResponse } from "next/server";
 
 async function openDB(): Promise<Database> {
-  return open({
+  const db = await open({
     filename: "./data.db",
     driver: sqlite3.Database,
   });
+  await db.exec("PRAGMA foreign_keys = ON;");
+  return db;
 }
 
 export type MessageSpan = {
@@ -101,7 +103,7 @@ export async function GET() {
       FROM 
         TestSample ts
       JOIN 
-        Trace t ON ts.trace_id = t.id
+        Trace t ON ts.id = t.test_sample_id
       LEFT JOIN 
         AgentSpan asp ON t.id = asp.trace_id
       LEFT JOIN 

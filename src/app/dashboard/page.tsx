@@ -84,6 +84,22 @@ export default function TestSamples() {
     }
   }
 
+  async function deleteTestSample(testSampleId: string) {
+    try {
+      const response = await fetch(`/dashboard/api/testSamples/${testSampleId}`, {
+        method: "DELETE",
+      });
+
+      if (response.ok) {
+        await fetchTestSamples(); // Refetch all test samples to update state
+      } else {
+        console.error("Failed to delete test sample");
+      }
+    } catch (error) {
+      console.error("Error deleting test sample:", error);
+    }
+  }
+
   async function runTests() {
     setIsRunningTests(true);
     try {
@@ -140,6 +156,7 @@ export default function TestSamples() {
               updateMilestone={updateMilestone}
               addMilestone={(text: string) => addMilestone(testSample.test_sample_id, text)}
               deleteMilestone={deleteMilestone}
+              deleteTestSample={deleteTestSample}
             />
           ))}
         </div>

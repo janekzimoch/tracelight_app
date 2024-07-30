@@ -4,10 +4,12 @@ import { open } from "sqlite";
 import { Database } from "sqlite";
 
 async function openDB(): Promise<Database> {
-  return open({
+  const db = await open({
     filename: "./data.db",
     driver: sqlite3.Database,
   });
+  await db.exec("PRAGMA foreign_keys = ON;");
+  return db;
 }
 
 async function checkDataExists(): Promise<boolean> {

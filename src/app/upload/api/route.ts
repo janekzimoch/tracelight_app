@@ -6,10 +6,12 @@ import { v4 as uuidv4 } from "uuid";
 import { parseLangSmithTraces } from "@/backend/parseLangSmithTraces";
 
 async function openDB(): Promise<Database> {
-  return open({
+  const db = await open({
     filename: "./data.db",
     driver: sqlite3.Database,
   });
+  await db.exec("PRAGMA foreign_keys = ON;");
+  return db;
 }
 
 type NewTestSample = {
@@ -112,75 +114,69 @@ export async function POST(request: NextRequest) {
 
     // Create tables if they don't exist
     await db.exec(`
-      CREATE TABLE IF NOT EXISTS TestSample (
-        id TEXT PRIMARY KEY,
-        user_request TEXT,
-        trace_id TEXT,
-        FOREIGN KEY (trace_id) REFERENCES Trace(id)
-      );
-
-      CREATE TABLE IF NOT EXISTS Trace (
-        id TEXT PRIMARY KEY,
-        test_sample_id TEXT,
-        upload_timestamp TEXT,
-        FOREIGN KEY (test_sample_id) REFERENCES TestSample(id)
-      );
-
-      CREATE TABLE IF NOT EXISTS AgentSpan (
-        id TEXT PRIMARY KEY,
-        sequence_index INTEGER,
-        trace_id TEXT,
-        name TEXT,
-        FOREIGN KEY (trace_id) REFERENCES Trace(id)
-      );
-
-      CREATE TABLE IF NOT EXISTS MessageSpan (
-        id TEXT PRIMARY KEY,
-        sequence_index INTEGER,
-        agent_span_id TEXT,
-        content TEXT,
-        type TEXT,
-        tool_execution TEXT,
-        FOREIGN KEY (agent_span_id) REFERENCES AgentSpan(id)
-      );
-
-      CREATE TABLE IF NOT EXISTS Milestone (
-        id TEXT PRIMARY KEY,
-        test_sample_id TEXT,
-        sequence_index INTEGER,
-        text TEXT,
-        FOREIGN KEY (test_sample_id) REFERENCES TestSample(id)
-      );
-
-      CREATE TABLE IF NOT EXISTS TestResult (
-        id TEXT PRIMARY KEY,
-        milestone_id TEXT,
-        trace_id TEXT,
-        test_title TEXT,
-        feedback_message TEXT,
-        pass INTEGER,
-        FOREIGN KEY (milestone_id) REFERENCES Milestone(id),
-        FOREIGN KEY (trace_id) REFERENCES Trace(id)
-      );
-
-      CREATE TABLE IF NOT EXISTS SpanReference (
-        id TEXT PRIMARY KEY,
-        test_result_id TEXT,
-        agent_span_id TEXT,
-        reference_text TEXT,
-        FOREIGN KEY (test_result_id) REFERENCES TestResult(id),
-        FOREIGN KEY (agent_span_id) REFERENCES AgentSpan(id)
-      );
-    `);
+    PRAGMA foreign_keys = ON;
+  
+    CREATE TABLE IF NOT EXISTS TestSample (
+      id TEXT PRIMARY KEY,
+      user_request TEXT
+    );
+  
+    CREATE TABLE IF NOT EXISTS Trace (
+      id TEXT PRIMARY KEY,
+      test_sample_id TEXT,
+      upload_timestamp TEXT,
+      FOREIGN KEY (test_sample_id) REFERENCES TestSample(id) ON DELETE CASCADE
+    );
+  
+    CREATE TABLE IF NOT EXISTS AgentSpan (
+      id TEXT PRIMARY KEY,
+      sequence_index INTEGER,
+      trace_id TEXT,
+      name TEXT,
+      FOREIGN KEY (trace_id) REFERENCES Trace(id) ON DELETE CASCADE
+    );
+  
+    CREATE TABLE IF NOT EXISTS MessageSpan (
+      id TEXT PRIMARY KEY,
+      sequence_index INTEGER,
+      agent_span_id TEXT,
+      content TEXT,
+      type TEXT,
+      tool_execution TEXT,
+      FOREIGN KEY (agent_span_id) REFERENCES AgentSpan(id) ON DELETE CASCADE
+    );
+  
+    CREATE TABLE IF NOT EXISTS Milestone (
+      id TEXT PRIMARY KEY,
+      test_sample_id TEXT,
+      sequence_index INTEGER,
+      text TEXT,
+      FOREIGN KEY (test_sample_id) REFERENCES TestSample(id) ON DELETE CASCADE
+    );
+  
+    CREATE TABLE IF NOT EXISTS TestResult (
+      id TEXT PRIMARY KEY,
+      milestone_id TEXT,
+      trace_id TEXT,
+      test_title TEXT,
+      feedback_message TEXT,
+      pass INTEGER,
+      FOREIGN KEY (milestone_id) REFERENCES Milestone(id) ON DELETE CASCADE,
+      FOREIGN KEY (trace_id) REFERENCES Trace(id) ON DELETE CASCADE
+    );
+  
+    CREATE TABLE IF NOT EXISTS SpanReference (
+      id TEXT PRIMARY KEY,
+      test_result_id TEXT,
+      agent_span_id TEXT,
+      reference_text TEXT,
+      FOREIGN KEY (test_result_id) REFERENCES TestResult(id) ON DELETE CASCADE,
+      FOREIGN KEY (agent_span_id) REFERENCES AgentSpan(id) ON DELETE CASCADE
+    );
+  `);
 
     const formData = await request.formData();
-    const files: File[] = [];
-
-    for (const [key, value] of formData.entries()) {
-      if (value instanceof File) {
-        files.push(value);
-      }
-    }
+    const files = formData.getAll("file") as File[];
 
     if (files.length === 0) {
       console.error("No files provided in the request");
@@ -198,6 +194,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ message: "Invalid JSON format" }, { status: 400 });
       }
     }
+
     const langSmithTraces = parseLangSmithTraces(jsonDataList);
 
     if (!Array.isArray(langSmithTraces) || !langSmithTraces.every(isNewTestSample)) {
@@ -213,7 +210,7 @@ export async function POST(request: NextRequest) {
       const uploadTimestamp = new Date().toISOString();
 
       // Insert the TestSample
-      await db.run("INSERT INTO TestSample (id, user_request, trace_id) VALUES (?, ?, ?)", testSampleId, testSample.user_request, traceId);
+      await db.run("INSERT INTO TestSample (id, user_request) VALUES (?, ?)", testSampleId, testSample.user_request);
 
       // Insert the Trace
       await db.run("INSERT INTO Trace (id, test_sample_id, upload_timestamp) VALUES (?, ?, ?)", traceId, testSampleId, uploadTimestamp);
@@ -250,7 +247,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Close the database connection
     await db.close();
 
     return NextResponse.json({ message: "File uploaded successfully" }, { status: 200 });

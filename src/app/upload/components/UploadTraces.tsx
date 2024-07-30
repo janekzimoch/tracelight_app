@@ -57,8 +57,8 @@ export default function UploadTraces(): JSX.Element {
     }
 
     const formData = new FormData();
-    files.forEach((file, index) => {
-      formData.append(`file${index}`, file);
+    files.forEach((file) => {
+      formData.append("file", file);
     });
 
     try {
@@ -70,7 +70,8 @@ export default function UploadTraces(): JSX.Element {
       if (response.ok) {
         router.push("/dashboard");
       } else {
-        setError("Failed to upload files.");
+        const errorData = await response.json();
+        setError(errorData.message || "Failed to upload files.");
       }
     } catch (error) {
       console.error(error);

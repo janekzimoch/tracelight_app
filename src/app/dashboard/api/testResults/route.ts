@@ -6,10 +6,12 @@ import { v4 as uuidv4 } from "uuid";
 import { TestResultData, runTests } from "@/backend/milestoneEvaluation";
 
 async function openDB(): Promise<Database> {
-  return open({
+  const db = await open({
     filename: "./data.db",
     driver: sqlite3.Database,
   });
+  await db.exec("PRAGMA foreign_keys = ON;");
+  return db;
 }
 
 export async function POST(request: NextRequest) {
