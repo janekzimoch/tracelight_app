@@ -75,7 +75,7 @@ export default function TestSampleCard({
             />
           </div>
           <div className="flex justify-center items-center">
-            <ResultBar testSample={testSample} />
+            <ResultBar testSample={testSample} onClick={() => setExpanded(!expanded)} />
           </div>
         </div>
         <Button variant="ghost" size="icon" className="text-red-500" onClick={() => deleteTestSample(testSample.test_sample_id)}>
