@@ -48,8 +48,8 @@ export default function TestSampleSpans({
             <div className="pl-12">
               <Span span={span} isHighlighted={span.id === highlightedSpanId} highlightedText={highlightedText} />
             </div>
-            <div className="absolute top-2 right-2 text-xs text-muted-foreground">
-              {expandedSpans[span.id] ? <ChevronUpIcon /> : <ChevronDownIcon />}
+            <div className="absolute top-3 right-3 text-muted-foreground chevron-hover">
+              {expandedSpans[span.id] ? <ChevronUpIcon width={18} height={18} /> : <ChevronDownIcon width={18} height={18} />}
             </div>
           </div>
           {expandedSpans[span.id] && (
