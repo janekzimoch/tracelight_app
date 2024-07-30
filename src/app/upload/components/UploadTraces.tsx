@@ -3,11 +3,13 @@ import { useRouter } from "next/navigation";
 import React, { useState, ChangeEvent, DragEvent } from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
 
 export default function UploadTraces(): JSX.Element {
   const [files, setFiles] = useState<File[]>([]);
   const [error, setError] = useState<string>("");
   const [isDragging, setIsDragging] = useState<boolean>(false);
+  const [isUploading, setIsUploading] = useState<boolean>(false);
   const router = useRouter();
 
   const handleFileSelection = (selectedFiles: FileList | null) => {
@@ -56,6 +58,7 @@ export default function UploadTraces(): JSX.Element {
       return;
     }
 
+    setIsUploading(true);
     const formData = new FormData();
     files.forEach((file) => {
       formData.append("file", file);
@@ -68,14 +71,19 @@ export default function UploadTraces(): JSX.Element {
       });
 
       if (response.ok) {
-        router.push("/dashboard");
+        // Add a small delay before redirecting
+        setTimeout(() => {
+          router.push("/dashboard");
+        }, 500); // 500ms delay, adjust as needed
       } else {
         const errorData = await response.json();
         setError(errorData.message || "Failed to upload files.");
+        setIsUploading(false); // Only set to false if there's an error
       }
     } catch (error) {
       console.error(error);
       setError("An error occurred during upload.");
+      setIsUploading(false); // Only set to false if there's an error
     }
   };
 
@@ -116,8 +124,15 @@ export default function UploadTraces(): JSX.Element {
         </div>
       </CardContent>
       <CardFooter className="flex justify-end">
-        <Button onClick={handleUpload} disabled={files.length === 0}>
-          Upload
+        <Button onClick={handleUpload} disabled={files.length === 0 || isUploading}>
+          {isUploading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Uploading...
+            </>
+          ) : (
+            "Upload"
+          )}
         </Button>
       </CardFooter>
     </Card>
