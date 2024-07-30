@@ -19,7 +19,7 @@ export default function ResultBar({ testSample, onClick }: { testSample: TestSam
   }
 
   const isAllPassed = numberPassed === numberTotal;
-  const baseClasses = "flex cursor-default items-center space-x-2 rounded-full shadow px-3 py-1 hover:shadow-lg cursor-pointer";
+  const baseClasses = "flex cursor-default items-center space-x-2 rounded-full shadow px-3 py-1 hover:shadow-md cursor-pointer";
   const colorClasses = isAllPassed ? "bg-green-200 text-green-700 border border-green-500" : "bg-red-200 text-red-700 border border-red-500";
 
   return (
