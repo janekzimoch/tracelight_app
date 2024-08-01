@@ -34,7 +34,7 @@ export default function SubSpan({ message }: { message: MessageSpan }) {
         </div>
       </div>
       <div className="absolute top-2 right-2 text-muted-foreground chevron-hover">
-        {isExpanded ? <ChevronUpIcon width={18} height={18} /> : <ChevronDownIcon width={18} height={18} />}
+        {isExpanded ? <ChevronUpIcon width={20} height={20} /> : <ChevronDownIcon width={20} height={20} />}
       </div>
     </div>
   );
