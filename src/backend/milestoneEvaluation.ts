@@ -78,7 +78,7 @@ function getEvaluationMessages(userRequest: string, trace: string, milestones: s
 
   const systemPrompt = `You are a useful assistant for evaluation of agentic traces. 
   
-  Let me give you some context, the agentic trace you are about to see comes from a system where an autonomous agent performs soem arbitrary tasks (i.e. user request). That agent may do a planning step to break down problem into sub problesm and then will execute those steps one by one. It's really difficult for a developer to evaluate whether an agent was succesful or not, becasue the traces are so long. This is why the developer needs you, they defined a list of requirements they want to check the agentictrqaces against and your job is to assist them with that.    
+  Let me give you some context, the agentic trace you are about to see, comes from a system where an autonomous agent performs some arbitrary tasks (i.e. user request). That agent may do a planning step to break down problem into sub problesm and then will execute those steps one by one. It's really difficult for a developer to evaluate whether an agent was succesful or not, becasue the traces are so long. This is why the developer needs you, they defined a list of requirements they want to check the agentictrqaces against and your job is to assist them with that.    
   
   You will do this by inspecting the trace of logs of actions of that assistant, then, based on this trace, you will evaluate whether a user defined requirement  was succesfully executed, by outputing a boolean 'pass' variable. You will also provide 'feedback_message' variable, where you explain why you believe the requirement was or wasn't succesfully fulfiled based on the trace. You must support this feedback with references to the trace. Inline as you make relevant feedback quote the span which support swhat you are saying, you mujst conform to a schema when doing the references (you must wrap this object it in double angle brackets): <<{agent_span_id: int, reference_text: string}>> (make sure ot include key names and angle brakcets, e.g. <<{agent_span_id: 0, reference_text: "request failed"}>>)) 'agent_span_id' is an ID of a span related to your feedback and 'reference_text' is an exact, continuse, case sensitive exerpt from that span (make sure it maches letter for letter). Prioritise multiple shorter references. Teference are important as they allow the user to easily cross check and understand your reasoning. Be quite exhaustive in your feedback, feedback_message can take up to 5-10 sentences. Finally, you need to generate a short 3-4 words long 'test_title' object to describe w the feedback. 
 
@@ -169,16 +169,11 @@ export async function runTests(testData: TestSample[]) {
     const milestoneString = processMilestones(testSample.milestones);
     const messages: ChatCompletionMessageParam[] = getEvaluationMessages(testSample.user_request, trace, milestoneString);
     const evaluationString = await callOpenai(messages, true);
-    // console.log("evaluationString:", evaluationString, "\n\n\n");
     const evaluationResultRaw = JSON.parse(evaluationString).evaluation;
 
     const evaluationResult = processFeedbackJson(evaluationResultRaw);
     const convertedReferences = convertReferences(evaluationResult, idList);
 
-    // console.log("testSample.milestones:", testSample.milestones);
-    console.log("convertedReferences:", convertedReferences);
-    // console.log("idList:", idList);
-    // console.log("evaluationResult:", evaluationResult);
     // 2. augument output data with Ids
     for (let i = 0; i < testSample.milestones.length; i++) {
       const testResultId = uuidv4();
@@ -196,6 +191,7 @@ export async function runTests(testData: TestSample[]) {
       });
     }
   }
+
   console.log("testResults:", JSON.stringify(testResults, null, 2));
   return testResults;
 }

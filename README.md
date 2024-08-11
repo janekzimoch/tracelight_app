@@ -1,36 +1,56 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+## How to run
 
-## Getting Started
+install node packages:
 
-First, run the development server:
+```
+npm install
+```
+
+run dev server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Or run it using docker, `Dockerfile` should work.
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+## Project structure
 
-## Learn More
+we are using next.js 14 router logic
 
-To learn more about Next.js, take a look at the following resources:
+- backend
+  --- milestoneEvaluation.ts - functions for evaluating milestones against the traces.
+  --- pareLangSmithTraces.ts - custom made parsing script to organise and simplify traces obtained from LangSmith
+- app
+  --- upload - page for uploading traces. Files have to be in .json format. Each file can contain only one trace. Multiple files can be uplaoded at once.
+  --- dashboard - main page where user can: inspect traces, add milestones, run tests, and inspect test results
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+The database is SQLite (temporarily for itteration). Rest API endpoints for CRUDE operations are in `*/api` folders. Curently endpoints are written rather poorly using chatGPT (they need to be rewritten and use some ORM like Prisma)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
+## backend logic
 
-## Deploy on Vercel
+see `runTests()` function in `src/backend/milestoneEvaluation.ts` for a sequence of functions used to run tests. Prompt/s are also in this file.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## database structure
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+![database structure](tracelight_app/public/backend_structure.png)
+
+## TODO
+
+- [ ] handling multiple test runs
+      (one can run tests multiple times on a single user request - trace pair. This is neccesary, becasue user should be able to upload a new trace and rerun the test or even rerun the test for the same trace (due to stochastic nature of milestone tests) )
+  - [ ] add a timestamp ID to the database tables: Trace, TestResult. This is important to be able to track Trace uploads, and TestRuns over time. We will be then able to order them and show only the last test run by default.
+  - [ ] add a dialog field where you can see timestamps of TestRun and another one for Traces Clicking on a specific dialog would load that test state.
+    - [ ] whenever an older testrun/trace is selected there should be a badge - “this is not the latest test run”
+- [ ] uploading new trace for the same user request
+      CORE FEATURE - the main point of the app is to enable Test driven development (TDD). part of this is to make itterative improvoements to your code. User requests stay fixed and the traces change as you update your code and run the agent again.
+  - [ ] design how the UI & UX should look like - make some FIGMA sketches (to be done). ideally there would be some nice UI for expressing a timeline of traces as they were uploaded (left to rigth) and test scores for each.
+  - [ ] what is the minimal MVP of this?
+    - [ ] some dialog box for looking at older traces
+    - [ ] and some additional timeline plot which captures test evolution overtime.
+      - how do you handle addition of milestones/tests overtime? we can’t simply track percentage passed, becasue as we add more tests, it may seem as performance has worsened, but test might have simply gotten more rigorous.
+      - nevertheless, this might be fine for the time being. sbhow abolsute values: all milestones, milestones passed
+        - maybe each milestone could have its own color
+        - or for each test run we can show which milestones passed and which didn’t
