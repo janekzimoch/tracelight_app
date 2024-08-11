@@ -35,7 +35,7 @@ see `runTests()` function in `src/backend/milestoneEvaluation.ts` for a sequence
 
 ## database structure
 
-![database structure](tracelight_app/public/backend_structure.png)
+![database structure]("public/backend_structure.png")
 
 ## TODO
 
